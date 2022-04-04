@@ -1,0 +1,88 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use App\Services\ServiceManager;
+use Illuminate\Validation\ValidationException;
+use App\Models\User;
+
+class ManagerController extends Controller
+{
+    private $manager;
+
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+        $this->middleware('permissions');
+        $this->manager = new ServiceManager();
+    }
+
+    /**
+     * Get list with all managers
+     * @param  Request  $request
+     * @return JsonResponse
+     */
+    public function allManagers(Request $request): JsonResponse
+    {
+        return $this->manager->all($request);
+    }
+
+    /**
+     * Show all information about the manager
+     * @param $id
+     * @return JsonResponse
+     */
+    public function showManager($id): JsonResponse
+    {
+        return response()->json([
+            'status' => TRUE,
+            'data' => User::select('login', 'first_name', 'last_name',
+                'surname', 'role', 'email', 'created_at')->where('id', $id)->where('role',
+                'manager')->first(),
+        ]);
+    }
+
+    /**
+     * Adding a new manager to the database
+     * @param  Request  $request
+     * @return JsonResponse
+     * @throws ValidationException
+     */
+    public function addManager(Request $request): JsonResponse
+    {
+        return $this->manager->create($request);
+    }
+
+    /**
+     * Update manager data
+     * @param  Request  $request
+     * @param           $id
+     * @return JsonResponse
+     * @throws ValidationException
+     */
+    public function updateManager(Request $request, $id): JsonResponse
+    {
+        return $this->manager->update($request, $id);
+    }
+
+    /**
+     * Delete manager from database
+     * @param $id
+     * @return JsonResponse
+     */
+    public function deleteManager($id): JsonResponse
+    {
+        return $this->manager->delete($id);
+    }
+
+    /**
+     * Returns all statistics for managers
+     * @return JsonResponse
+     */
+    public function statistic(): JsonResponse
+    {
+        return $this->manager->statistic();
+    }
+}

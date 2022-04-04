@@ -1,0 +1,72 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| is assigned the "api" middleware group. Enjoy building your API!
+|
+*/
+
+Route::group(['middleware' => ['api']], function($route) {
+    Route::group(['prefix' => 'auth'], function() {
+        Route::post('login', '\App\Http\Controllers\AuthController@login');
+        Route::post('logout', '\App\Http\Controllers\AuthController@logout');
+        Route::post('refresh', '\App\Http\Controllers\AuthController@refresh');
+        Route::post('me', '\App\Http\Controllers\AuthController@me');
+    });
+
+    Route::group(['prefix' => 'account'], function() {
+        Route::post('change-password', '\App\Http\Controllers\AccountController@changePassword');
+    });
+
+    Route::group(['prefix' => 'managers'], function() {
+        Route::get('all', '\App\Http\Controllers\ManagerController@allManagers');
+        Route::get('{id}/get', '\App\Http\Controllers\ManagerController@showManager');
+        Route::post('create', '\App\Http\Controllers\ManagerController@addManager');
+        Route::patch('{id}/update', '\App\Http\Controllers\ManagerController@updateManager');
+        Route::delete('{id}/delete', '\App\Http\Controllers\ManagerController@deleteManager');
+    });
+
+    Route::group(['prefix' => 'databases'], function() {
+        Route::post('upload', '\App\Http\Controllers\FileController@uploadFile');
+        Route::patch('{id}/rename', '\App\Http\Controllers\FileController@renameDatabase');
+        Route::delete('{id}/delete', '\App\Http\Controllers\FileController@deleteDatabase');
+        Route::get('all', '\App\Http\Controllers\FileController@all');
+        Route::get('{id}/get', '\App\Http\Controllers\FileController@show');
+    });
+
+    Route::group(['prefix' => 'clients'], function() {
+        Route::get('duplicates', '\App\Http\Controllers\ClientController@duplicates');
+        Route::get('duplicates/delete', '\App\Http\Controllers\ClientController@deleteAllDuplicates');
+        Route::get('search', '\App\Http\Controllers\ClientController@searchClient');
+        Route::delete('{id}/delete', '\App\Http\Controllers\ClientController@deleteClient');
+        Route::get('{id}/get','\App\Http\Controllers\ClientController@show');
+        Route::patch('{id}/update', '\App\Http\Controllers\ClientController@updateClient');
+        Route::patch('{id}/set-status', '\App\Http\Controllers\ClientController@setStatus');
+        Route::patch('{id}/transfer', '\App\Http\Controllers\ClientController@transferClient');
+        Route::get('active', '\App\Http\Controllers\ClientController@activeClients');
+    });
+
+    Route::group(['prefix' => 'statuses'], function(){
+        Route::get('all', '\App\Http\Controllers\StatusController@all');
+        Route::patch('update', '\App\Http\Controllers\StatusController@updateStatuses');
+    });
+
+
+    Route::group(['prefix' => 'settings'], function() {
+        Route::patch('preinstall-text', '\App\Http\Controllers\SettingController@setPreinstallText');
+        Route::patch('jivo', '\App\Http\Controllers\SettingController@setJivoUrl');
+    });
+
+
+    Route::group(['prefix' => 'statistics'], function() {
+        Route::get('managers', '\App\Http\Controllers\ManagerController@statistic');
+    });
+});
