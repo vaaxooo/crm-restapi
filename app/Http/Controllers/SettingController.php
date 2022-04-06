@@ -35,4 +35,49 @@ class SettingController extends Controller
     {
         return $this->settings->setJivoUrl($request);
     }
+
+    /**
+     * @return JsonResponse
+     */
+    public function dialogueTemplates(): JsonResponse
+    {
+        return $this->settings->dialogueTemplates();
+    }
+
+    /**
+     * @param $id
+     * @return JsonResponse
+     */
+    public function showDialogueTemplate($id): JsonResponse
+    {
+        return $this->settings->showDialogueTemplate($id);
+    }
+
+    /**
+     * @param  Request  $request
+     * @return JsonResponse
+     */
+    public function createDialogueTemplate(Request $request): JsonResponse
+    {
+        return $this->settings->createDialogueTemplate($request);
+    }
+
+    /**
+     * @param  Request  $request
+     * @param           $id
+     * @return JsonResponse
+     */
+    public function updateDialogueTemplate(Request $request, $id): JsonResponse
+    {
+        return $this->settings->updateDialogueTemplate($request, $id);
+    }
+
+    /**
+     * @param $id
+     * @return JsonResponse
+     */
+    public function deleteDialogueTemplate($id): JsonResponse
+    {
+        return $this->settings->deleteDialogueTemplate($id);
+    }
 }

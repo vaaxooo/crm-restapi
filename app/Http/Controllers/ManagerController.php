@@ -15,7 +15,7 @@ class ManagerController extends Controller
     public function __construct()
     {
         $this->middleware('auth:api');
-        $this->middleware('permissions');
+        $this->middleware('permissions', ['except' => ['getPassedTests', 'getPassedTest']]);
         $this->manager = new ServiceManager();
     }
 
@@ -84,5 +84,49 @@ class ManagerController extends Controller
     public function statistic(): JsonResponse
     {
         return $this->manager->statistic();
+    }
+
+    /**
+     * Refresh Manager last online (timestamp)
+     * @param $id
+     * @return JsonResponse
+     */
+    public function refreshOnline($id): JsonResponse
+    {
+        return $this->manager->refreshOnline($id);
+    }
+
+    /**
+     * Get a list of the tests passed by the manager
+     * @param $id
+     * @return JsonResponse
+     */
+    public function getPassedTests($id): JsonResponse
+    {
+        return $this->manager->getPassedTests($id);
+    }
+
+    /**
+     * Get information about the test passed by the manager
+     * @param $id
+     * @param $test_id
+     * @return JsonResponse
+     */
+    public function getPassedTest($id, $test_id): JsonResponse
+    {
+        return $this->manager->getPassedTest($id, $test_id);
+    }
+
+
+    /**
+     * Saving the test results
+     * @param  Request  $request
+     * @param           $id
+     * @param           $test_id
+     * @return JsonResponse
+     */
+    public function passingTest(Request $request, $id, $test_id): JsonResponse
+    {
+        return $this->manager->passingTest($request, $id, $test_id);
     }
 }

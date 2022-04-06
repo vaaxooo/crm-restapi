@@ -6,6 +6,7 @@ namespace App\Services;
 use App\Models\Client;
 use App\Models\File;
 use App\Models\ProcessedClient;
+use App\Models\Setting;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -175,6 +176,7 @@ class ServiceFiles
                 Client::insert($processedClients);
             }
             $freeManagers = User::where('current_client', '=', NULL)->get();
+            $webSettings = Setting::select('preinstall_text')->where('id', 1)->first();
             foreach($freeManagers as $manager) {
                 $freeClient = Client::where('processed', 0)
                     ->where('database', $database)->inRandomOrder();
@@ -189,6 +191,7 @@ class ServiceFiles
                 ProcessedClient::create([
                     'client_id' => $clientData->id,
                     'manager_id' => $manager->id,
+                    'information' => $webSettings->preinstall_text
                 ]);
             }
 

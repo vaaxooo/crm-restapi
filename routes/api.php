@@ -32,6 +32,10 @@ Route::group(['middleware' => ['api']], function($route) {
         Route::post('create', '\App\Http\Controllers\ManagerController@addManager');
         Route::patch('{id}/update', '\App\Http\Controllers\ManagerController@updateManager');
         Route::delete('{id}/delete', '\App\Http\Controllers\ManagerController@deleteManager');
+        Route::get('{id}/refresh-online', '\App\Http\Controllers\ManagerController@refreshOnline');
+        Route::get('{id}/passed-tests', '\App\Http\Controllers\ManagerController@getPassedTests');
+        Route::get('{id}/passed-test/{test_id}', '\App\Http\Controllers\ManagerController@getPassedTest');
+        Route::post('{id}/passing-test/{test_id}', '\App\Http\Controllers\ManagerController@passingTest');
     });
 
     Route::group(['prefix' => 'databases'], function() {
@@ -68,5 +72,21 @@ Route::group(['middleware' => ['api']], function($route) {
 
     Route::group(['prefix' => 'statistics'], function() {
         Route::get('managers', '\App\Http\Controllers\ManagerController@statistic');
+    });
+
+    Route::group(['prefix' => 'tests'], function() {
+        Route::get('all', '\App\Http\Controllers\TestController@all');
+        Route::get('{id}/get', '\App\Http\Controllers\TestController@show');
+        Route::post('create', '\App\Http\Controllers\TestController@create');
+        Route::delete('{id}/delete', '\App\Http\Controllers\TestController@delete');
+    });
+
+
+    Route::group(['prefix' => 'dialogue-templates'], function() {
+        Route::get('all', '\App\Http\Controllers\SettingController@dialogueTemplates');
+        Route::get('{id}/get', '\App\Http\Controllers\SettingController@showDialogueTemplate');
+        Route::post('create', '\App\Http\Controllers\SettingController@createDialogueTemplate');
+        Route::patch('{id}/update', '\App\Http\Controllers\SettingController@updateDialogueTemplate');
+        Route::delete('{id}/delete', '\App\Http\Controllers\SettingController@deleteDialogueTemplate');
     });
 });
