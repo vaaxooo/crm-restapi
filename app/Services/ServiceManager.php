@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Redis;
 
 class ServiceManager
 {
@@ -118,18 +119,43 @@ class ServiceManager
      */
     public function statistic(): JsonResponse
     {
-        /*$managers = DB::table('users')
-            ->select(DB::raw('count(processed_clients.status) as count, users.role, users.id, processed_clients.manager_id, processed_clients.status'))
-            ->join('processed_clients', 'processed_clients.manager_id', '=',
-                'users.id')->where('users.role', 'manager')->groupBy('processed_clients.manager_id')
-            ->get();*/
+        try {
+            if(Redis::get('statistics')) {
+                return response()->json([
+                    'status' => TRUE,
+                    'data' => json_decode(Redis::get('statistics')),
+                ]);
+            }
+            $managers = DB::select(DB::raw('WITH m AS (SELECT * FROM users WHERE role = "manager")
+SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GROUP BY pc.id'));
+            $processedManagers = [];
+            foreach($managers as $manager) {
+                if(isset($processedManagers[$manager->manager_id][$manager->status])) {
+                    $processedManagers[$manager->manager_id][$manager->status]
+                        = (int)$processedManagers[$manager->manager_id][$manager->status] + 1;
+                } else {
+                    $processedManagers[$manager->manager_id][$manager->status] = 1;
+                }
+            }
+            $managers = [];
+            foreach($processedManagers as $key => $statistic) {
+                $managers[] = [
+                    'manager_id' => $key,
+                    'processed_clients' => $statistic,
+                ];
+            }
+            Redis::set('statistics', json_encode($managers), 'EX', 86400);
 
-        $managers = DB::select(DB::raw(''));
-
-        return response()->json([
-            'status' => TRUE,
-            'data' => $managers,
-        ]);
+            return response()->json([
+                'status' => TRUE,
+                'data' => $managers,
+            ]);
+        } catch(\Exception $exception) {
+            return response()->json([
+                'status' => FALSE,
+                'message' => "An error occurred while processing the statistics",
+            ]);
+        }
     }
 
     /**
@@ -200,24 +226,25 @@ class ServiceManager
     {
         if(!isset($request->validator)) {
             return response()->json([
-                'status' => false,
-                'message' => 'The [answer] field is required'
+                'status' => FALSE,
+                'message' => 'The [answer] field is required',
             ]);
         }
         if(!Test::where('id', $test_id)->exists()) {
             return response()->json([
-                'status' => false,
-                'message' => 'Test not found'
+                'status' => FALSE,
+                'message' => 'Test not found',
             ]);
         }
         HistoryTest::create([
             'test_id' => $test_id,
             'manager_id' => $id,
-            'answer' => $request->answer
+            'answer' => $request->answer,
         ]);
+
         return response()->json([
-            'status' => true,
-            'message' => 'The results of the passed test have been successfully saved'
+            'status' => TRUE,
+            'message' => 'The results of the passed test have been successfully saved',
         ]);
     }
 }
