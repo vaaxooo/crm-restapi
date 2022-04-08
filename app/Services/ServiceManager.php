@@ -25,7 +25,7 @@ class ServiceManager
         return response()->json([
             'status' => TRUE,
             'data' => User::select('id', 'login', 'first_name', 'last_name',
-                'surname', 'role', 'email', 'created_at')->where('role',
+                'surname', 'role', 'email', 'last_online', 'created_at')->where('role',
                 'manager')->paginate(20),
         ]);
     }

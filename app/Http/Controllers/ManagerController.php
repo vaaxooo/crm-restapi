@@ -39,7 +39,7 @@ class ManagerController extends Controller
         return response()->json([
             'status' => TRUE,
             'data' => User::select('login', 'first_name', 'last_name',
-                'surname', 'role', 'email', 'created_at')->where('id', $id)->where('role',
+                'surname', 'role', 'email', 'created_at', 'last_online')->where('id', $id)->where('role',
                 'manager')->first(),
         ]);
     }

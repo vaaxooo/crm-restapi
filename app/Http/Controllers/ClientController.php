@@ -24,7 +24,8 @@ class ClientController extends Controller
      */
     public function duplicates(Request $request): JsonResponse
     {
-        return $this->client->duplicates();
+        return $this->client
+        ->duplicates();
     }
 
     /**
