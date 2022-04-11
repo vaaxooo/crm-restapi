@@ -26,14 +26,14 @@ class ServiceFiles
     public function all($request): JsonResponse
     {
         $table = DB::table('files');
-        if(isset($request->databases) && !empty($request->databases)) {
+        if (isset($request->databases) && !empty($request->databases)) {
             $table->whereIn('id', json_decode($request->databases));
         }
-        if(isset($request->managers) && !empty($request->managers)) {
+        if (isset($request->managers) && !empty($request->managers)) {
         }
-        if(isset($request->statuses) && !empty($request->statuses)) {
+        if (isset($request->statuses) && !empty($request->statuses)) {
         }
-        if(isset($request->zones) && !empty($request->zones)) {
+        if (isset($request->zones) && !empty($request->zones)) {
         }
         $table_clone = clone $table;
         $freeClients = clone $table;
@@ -49,12 +49,14 @@ class ServiceFiles
             ->join('clients', 'clients.database', '=', 'files.id')
             ->where('clients.processed', 0)->groupBy('clients.database')->get();
 
-        foreach($freeClients as $key => $freeClient) {
+        foreach ($freeClients as $key => $freeClient) {
             $clientData = (array)$freeClients[$key];
             unset($clientData['processed']);
             unset($clientData['id']);
-            $freeClients[$key] = array_merge($clientData,
-                ['status' => 'Осталось']);
+            $freeClients[$key] = array_merge(
+                $clientData,
+                ['status' => 'Осталось']
+            );
             $statistics[] = $freeClients[$key];
         }
 
@@ -84,7 +86,7 @@ class ServiceFiles
                     'statistic' => (new ServiceClient())->statistic($id),
                 ],
             ]);
-        } catch(Exception $exception) {
+        } catch (Exception $exception) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'An error occurred while executing the request',
@@ -102,17 +104,18 @@ class ServiceFiles
             $validator = Validator::make($request->all(), [
                 'name' => 'required|min:4',
             ]);
-            if($validator->fails()) {
+            if ($validator->fails()) {
                 return response()->json([
                     'status' => FALSE,
                     'errors' => $validator->errors(),
                 ]);
             }
             $file = $request->file('file');
-            if(isset($file)) {
-                if(!in_array($file->getClientOriginalExtension(),
-                    ['xls', 'xlsx', 'txt'])
-                ) {
+            if (isset($file)) {
+                if (!in_array(
+                    $file->getClientOriginalExtension(),
+                    ['xls', 'xlsx', 'txt']
+                )) {
                     return response()->json([
                         'status' => FALSE,
                         'message' => 'Invalid file format',
@@ -124,23 +127,26 @@ class ServiceFiles
                     'message' => 'The file has not been uploaded',
                 ]);
             }
-            $filename = md5(time().'_'.pathinfo($file->getClientOriginalName(),
-                        PATHINFO_FILENAME)).'.'
-                .$file->getClientOriginalExtension();
+            $filename = md5(time() . '_' . pathinfo(
+                $file->getClientOriginalName(),
+                PATHINFO_FILENAME
+            )) . '.'
+                . $file->getClientOriginalExtension();
             Storage::disk('local')->putFileAs('databases', $file, $filename);
-            $filePath = 'databases/'.$filename;
+            $filePath = 'databases/' . $filename;
             $database = File::create([
                 'name' => $request->name,
                 'path' => $filePath,
             ]);
-            $this->importClients((new ClientsImport)->toArray($file->getRealPath()),
-                $database->id);
+            $this->importClients((new ClientsImport)->toArray($file),
+                $database->id
+            );
 
             return response()->json([
                 'status' => TRUE,
                 'message' => 'File successfully uploaded',
             ]);
-        } catch(Exception $exception) {
+        } catch (Exception $exception) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'There was an error when I downloaded the file!',
@@ -158,12 +164,12 @@ class ServiceFiles
     {
         try {
             unset($clients[0][0]); //Remove headers (bio, phone)
-            foreach($clients as $circle => $circle_clients) {
-                if(count($circle_clients) < 2) {
+            foreach ($clients as $circle => $circle_clients) {
+                if (count($circle_clients) < 2) {
                     break;
                 }
                 $processedClients = [];
-                foreach($circle_clients as $client) {
+                foreach ($circle_clients as $client) {
                     $bio = explode(' ', $client[0]);
                     $processedClients[] = [
                         'first_name' => $bio[1],
@@ -177,11 +183,11 @@ class ServiceFiles
             }
             $freeManagers = User::where('current_client', '=', NULL)->get();
             $webSettings = Setting::select('preinstall_text')->where('id', 1)->first();
-            foreach($freeManagers as $manager) {
+            foreach ($freeManagers as $manager) {
                 $freeClient = Client::where('processed', 0)
                     ->where('database', $database)->inRandomOrder();
                 $clientData = $freeClient->first();
-                if(!$clientData) {
+                if (!$clientData) {
                     break;
                 }
                 User::where('id', $manager->id)
@@ -196,7 +202,7 @@ class ServiceFiles
             }
 
             return FALSE;
-        } catch(Exception $exception) {
+        } catch (Exception $exception) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'An error occurred when importing clients',
@@ -215,14 +221,14 @@ class ServiceFiles
         $validator = Validator::make($request->all(), [
             'name' => 'required|min:4',
         ]);
-        if($validator->fails()) {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => FALSE,
                 'errors' => $validator->errors(),
             ]);
         }
         $file = File::where('id', $id);
-        if(!$file->exists()) {
+        if (!$file->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Database does not exists',
@@ -243,7 +249,7 @@ class ServiceFiles
     public function delete($id): JsonResponse
     {
         $file = File::where('id', $id);
-        if(!$file->exists()) {
+        if (!$file->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Database does not exist',
@@ -256,5 +262,4 @@ class ServiceFiles
             'message' => 'Database successfully deleted',
         ]);
     }
-
 }

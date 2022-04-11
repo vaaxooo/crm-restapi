@@ -6,7 +6,8 @@ namespace App\Services;
 use App\Models\Status;
 use Illuminate\Http\JsonResponse;
 
-class ServiceStatuses {
+class ServiceStatuses
+{
 
     /**
      * @return JsonResponse
@@ -28,13 +29,13 @@ class ServiceStatuses {
     public function update($request): JsonResponse
     {
         $statuses = json_decode($request->statuses);
-        if(!isset($statuses)) {
+        if (!isset($statuses)) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'The [statuses] field is mandatory'
             ]);
         }
-        foreach($statuses as $id => $name) {
+        foreach ($statuses as $id => $name) {
             Status::where('id', (int) $id)->update(['name' => $name]);
         }
         return response()->json([
@@ -42,5 +43,4 @@ class ServiceStatuses {
             'message' => 'The names of the statuses have been successfully updated'
         ]);
     }
-
 }

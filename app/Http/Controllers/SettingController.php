@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use App\Services\ServiceSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Writer\Ods\Settings;
 
 class SettingController extends Controller
 {
     private $settings;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->middleware('auth:api');
         $this->middleware('permissions');
         $this->settings = new ServiceSettings();
@@ -26,6 +29,18 @@ class SettingController extends Controller
         return $this->settings->setPreinstallText($request);
     }
 
+    /**
+     * Get all settings website
+     * @param  Request  $request
+     * @return JsonResponse
+     */
+    public function getSettings(): JsonResponse
+    {
+        return response()->json([
+            'status' => true,
+            'data' => Setting::where('id', 1)->first()
+        ]);
+    }
 
     /**
      * @param  Request  $request

@@ -39,7 +39,7 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             return response()->json([
                 'status' => false,
-                'message' => $e->getMessage()
+                'error' => $e->getMessage()
             ], 500);
         });
 
@@ -62,10 +62,11 @@ class Handler extends ExceptionHandler
         ], 401);
     }
 
-    public function render($request, Throwable $e) {
+    public function render($request, Throwable $e)
+    {
         return response()->json([
             'status' => FALSE,
-            'message' => $e->getMessage()
+            'error' => $e->getMessage()
         ]);
     }
 }

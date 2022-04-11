@@ -4,13 +4,13 @@ namespace App\Http\Middleware;
 
 use Closure;
 
-class Permissions {
+class PermissionsReporting {
 
     /**
-     * Checking user permissions on administrator.
+     * Checking user permissions on Reporting.
      */
     public function handle($request, Closure $next) {
-        if(auth()->user()->role != "admin") {
+        if(auth()->user()->role != "reporting") {
             return response()->json([
                 "status" => false,
                 "message" => "Permissions denied!"
