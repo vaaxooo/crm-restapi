@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class CreateFilesTable extends Migration
 {
@@ -17,6 +18,7 @@ class CreateFilesTable extends Migration
             $table->id();
             $table->string('name');
             $table->string('path');
+            $table->uuid('uid')->default(DB::raw('(UUID())'));
             $table->boolean('active')->default(true);
             $table->timestamps();
         });

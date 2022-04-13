@@ -48,7 +48,8 @@ Route::group(['middleware' => ['api']], function ($route) {
 
     Route::group(['prefix' => 'clients'], function () {
         Route::get('duplicates', '\App\Http\Controllers\ClientController@duplicates');
-        Route::get('duplicates/delete', '\App\Http\Controllers\ClientController@deleteAllDuplicates');
+        Route::delete('duplicates/delete', '\App\Http\Controllers\ClientController@deleteAllDuplicates');
+        Route::delete('duplicates/statuses/delete', '\App\Http\Controllers\ClientController@deleteDuplicates');
         Route::get('search', '\App\Http\Controllers\ClientController@searchClient');
         Route::delete('{id}/delete', '\App\Http\Controllers\ClientController@deleteClient');
         Route::get('{id}/get', '\App\Http\Controllers\ClientController@show');

@@ -15,7 +15,7 @@ class CreatePayoutsHistoriesTable extends Migration
     {
         Schema::create('payouts_histories', function (Blueprint $table) {
             $table->id();
-            $table->timestamp('date');
+            $table->date('date');
             $table->string('sum');
             $table->string('currency');
             $table->string('exchange_sum');

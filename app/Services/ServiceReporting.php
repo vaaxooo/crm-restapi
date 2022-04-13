@@ -11,13 +11,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
+use GuzzleHttp\Psr7\Request;
 use Illuminate\Support\Facades\Redis;
 
-class ServiceReporting {
+class ServiceReporting
+{
     private $kurs;
 
-    public function __construct() {
-        if(!Redis::get('kurs')) {
+    public function __construct()
+    {
+        if (!Redis::get('kurs')) {
             $kurs = json_decode(@file_get_contents('http://api.currencylayer.com/live?access_key=56cbeab727c4d31acbb87b32604ee8c5&format=1'));
             $btc_kurs = json_decode(@file_get_contents('https://apirone.com/api/v2/ticker?currency=btc'));
             $kurs->quotes->BTCUSD = $btc_kurs->usd;
@@ -40,27 +43,22 @@ class ServiceReporting {
             'percent' => 'required', #Общий процент
             'payouts_list' => 'required', #Массив с менеджерами
         ]);
-        if($validator->fails()) {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => FALSE,
                 'errors' => $validator->errors()
             ]);
         }
         $params = (object) $validator->validated();
-        /*
-        *    EXAMPLE $params->payouts_list:
-        *    [
-        *       'payouts_list' => [
-        *           ['managers' => [1 => "BIO", 2 => "BIO"], 'percent' => 7.5, 'comment' => "TEST"],
-        *           ['managers' => [1 => "BIO", 2 => "BIO"], 'percent' => 7.5, 'comment' => "TEST"],
-        *        ]
-        *    ]
-        */
+        /*[
+            {"managers": {"1": "BIO", "2": "BIO"}, "percent": 7.5, "comment": "TEST"},
+            {"managers": {"1": "BIO", "2": "BIO"}, "percent": 7.5, "comment": "TEST"},
+        ]*/
         $processedData = [];
         $total_percent = 0;
-        foreach($params->payouts_list as $payout) {
+        foreach (json_decode($params->payouts_list) as $payout) {
             $payout = (object) $payout;
-            foreach($payout->managers as $manager_id => $manager) {
+            foreach ($payout->managers as $manager_id => $manager) {
                 $processedData[] = [
                     'date' => $params->date,
                     'comment' => $payout->comment,
@@ -72,13 +70,13 @@ class ServiceReporting {
                 $total_percent += $payout->percent;
             }
         }
-        if($total_percent > $params->percent) {
+        if ($total_percent > $params->percent) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'The divided percentage between managers cannot exceed the fixed percentage'
             ]);
         }
-        foreach($processedData as $key => $manager) {
+        foreach ($processedData as $key => $manager) {
             $manager = (object) $manager;
             $processedData[$key]['payout'] = $params->payout / count($processedData); //Выплата = кол-во менеджеров / общая сумма
             $processedData[$key]['salary'] = $params->payout * $manager->temp_percent / 100; //Доход = Общая сумма / процент менеджера
@@ -89,7 +87,7 @@ class ServiceReporting {
         ReportingIncome::create([
             'date' => $params->date,
             'comment' => 'Percent',
-            'manager_bio' => $generalManager->first_name." ".$generalManager->last_name." ".$generalManager->surname,
+            'manager_bio' => $generalManager->first_name . " " . $generalManager->last_name . " " . $generalManager->surname,
             'manager_id' => $generalManager->id,
             'total_amount' => $params->payout,
             'payout' => 0,
@@ -111,10 +109,12 @@ class ServiceReporting {
     public function incomeHistory($request): JsonResponse
     {
         $table = DB::table('reporting_incomes')->select('date', 'comment', 'manager_bio', 'currency', 'salary', 'payout', 'created_at');
-        if(isset($request->dates)) {
-            $table->whereBetween('created_at', $request->dates);
+        if (isset($request->dates)) {
+            $table->whereDate('date', '>=', $request->dates['start_date'])
+                ->whereDate('date', '<=', $request->dates['end_date']);
         } else {
-            $table->whereBetween('created_at', [\Carbon\Carbon::now()->weekday(1), new Carbon("Sunday")]);
+            $table->whereDate('date', '>=', \Carbon\Carbon::now()->weekday(1))
+                ->whereDate('date', '<=', new Carbon("Sunday"));
         }
         $week_payouts = clone $table;
         $total_btc = clone $table;
@@ -146,23 +146,27 @@ class ServiceReporting {
     public function expense($request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'date' => $request->date,
-            'comment' => $request->comment,
-            'sum' => $request->sum,
-            'currency' => $request->currency
+            'date' => 'required',
+            'comment' => 'required',
+            'sum' => 'required|integer',
+            'currency' => 'required'
         ]);
-        if($validator->fails()) {
+
+        if ($validator->fails()) {
             return response()->json([
                 'status' => FALSE,
-                'errors' => $validator->fails()
+                'errors' => $validator->errors()
             ]);
         }
 
-        if($request->currency != 'BTC') {
-            $exchange_rate = (float) round($this->kurs->USD.strtoupper($request->currency), 2);
-            $sum_in_dollar = $request->sum / $exchange_rate;
+        if (strtoupper($request->currency) != 'BTC') {
+            $sum_in_dollar = $request->sum;
+            if (strtoupper($request->currency) == 'UAH') {
+                $exchange_rate = (float) round($this->kurs->USDUAH, 2);
+                $sum_in_dollar = $request->sum / $exchange_rate;
+            }
         } else {
-            $exchanger_rate = $this->kurs->BTCUSD;
+            $exchange_rate = $this->kurs->BTCUSD;
             $sum_in_dollar = $request->sum * $exchange_rate;
         }
 
@@ -177,16 +181,28 @@ class ServiceReporting {
     /**
      * @return JsonResponse
      */
-    public function expenseHistory(): JsonResponse
+    public function expenseHistory($request): JsonResponse
     {
-        $data = Expense::paginate(20);
+        $table = DB::table('expenses');
+        if (isset($request->dates)) {
+            $table->whereDate('date', '>=', $request->dates['start_date'])
+                ->whereDate('date', '<=', $request->dates['end_date']);
+        } else {
+            $table->whereDate('date', '>=', \Carbon\Carbon::now()->weekday(1))
+                ->whereDate('date', '<=', new Carbon("Sunday"));
+        }
+
+        $btc = clone $table;
+        $usdt = clone $table;
+        $uah = clone $table;
+
         return response()->json([
             'status' => TRUE,
-            'data' => $data,
+            'data' => $table->get(),
             'statistics' => [
-                'btc' => Expense::where('currency', 'btc')->sum('sum'),
-                'usdt' => Expense::where('currency', 'usdt')->sum('sum'),
-                'uah' => Expense::where('currency', 'uah')->sum('sum')
+                'btc' => $btc->where('currency', 'btc')->sum('sum'),
+                'usdt' => $usdt->where('currency', 'usdt')->sum('sum'),
+                'uah' => $uah->where('currency', 'uah')->sum('sum')
             ]
         ]);
     }
@@ -195,7 +211,8 @@ class ServiceReporting {
     /**
      * @return JsonResponse
      */
-    public function kurs() {
+    public function kurs()
+    {
         return response()->json([
             'status' => TRUE,
             'data' => $this->kurs
@@ -206,13 +223,22 @@ class ServiceReporting {
     /**
      * @return JsonResponse
      */
-    public function salaries(): JsonResponse
+    public function salaries($request): JsonResponse
     {
-        $managers = ReportingIncome::select('manager_id', 'manager_bio', 'salary')->whereBetween('created_at', [\Carbon\Carbon::now()->weekday(1), new Carbon("Sunday")])->paginate(20);
+        $table = DB::table('reporting_incomes')->select('manager_id', 'manager_bio', 'salary');
+        if (isset($request->dates)) {
+            $table->whereDate('date', '>=', $request->dates['start_date'])
+                ->whereDate('date', '<=', $request->dates['end_date']);
+        } else {
+            $table->whereDate('date', '>=', \Carbon\Carbon::now()->weekday(1))
+                ->whereDate('date', '<=', new Carbon("Sunday"));
+        }
+
+        $managers = $table->paginate(20);
 
         $processedManagers = [];
         $exchange_rate = (float) round($this->kurs->USDUAH, 2);
-        foreach($managers as $key => $manager) {
+        foreach ($managers as $key => $manager) {
             $salary_uah = $manager->salary * round($exchange_rate, 2);
             $processedManagers[] = [
                 'manager' => $manager->manager_bio,
@@ -234,7 +260,7 @@ class ServiceReporting {
     public function incomeDelete($id): JsonResponse
     {
         $table = ReportingIncome::where('id', $id);
-        if(!$table->exists()) {
+        if (!$table->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Income history not found'
@@ -254,7 +280,7 @@ class ServiceReporting {
     public function expenseDelete($id): JsonResponse
     {
         $table = Expense::where('id', $id);
-        if(!$table->exists()) {
+        if (!$table->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Expense history not found'
@@ -279,7 +305,7 @@ class ServiceReporting {
             'currency' => 'required',
             'percent' => 'required'
         ]);
-        if($validator->fails()) {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => FALSE,
                 'errors' => $validator->errors()
@@ -287,7 +313,7 @@ class ServiceReporting {
         }
         $sum = $request->sum;
         $exchanger_rate = $this->kurs->USDUAH;
-        if(strtoupper($request->currency) == 'BTC') {
+        if (strtoupper($request->currency) == 'BTC') {
             $sum = round($request->sum * $this->kurs->BTCUSD);
             $exchanger_rate = $this->kurs->BTCUSD;
         }
@@ -306,10 +332,9 @@ class ServiceReporting {
     }
 
     /**
-     * @param $request
      * @return JsonResponse
      */
-    public function payoutsHistory($request): JsonResponse
+    public function payoutsHistory(): JsonResponse
     {
         $data = PayoutsHistory::paginate(15);
         return response()->json([

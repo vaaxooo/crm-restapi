@@ -15,7 +15,7 @@ class CreateExpensesTable extends Migration
     {
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
-            $table->timestamp('date');
+            $table->date('date');
             $table->string('comment')->nullable();
             $table->string('sum');
             $table->string('sum_in_dollar');

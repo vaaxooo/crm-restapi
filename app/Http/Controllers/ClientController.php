@@ -25,7 +25,16 @@ class ClientController extends Controller
     public function duplicates(Request $request): JsonResponse
     {
         return $this->client
-        ->duplicates();
+            ->duplicates();
+    }
+
+    /**
+     * Delete duplicates clients with status Delete and failure to call
+     * @return JsonResponse
+     */
+    public function deleteDuplicates(): JsonResponse
+    {
+        return $this->client->deleteDuplicates();
     }
 
     /**
@@ -111,5 +120,4 @@ class ClientController extends Controller
     {
         return $this->client->activeClients();
     }
-
 }

@@ -19,9 +19,16 @@ class ServiceClient
      */
     public function duplicates(): JsonResponse
     {
-        $clients = Client::select('clients.status', 'clients.first_name',
-            'clients.last_name', 'clients.surname', 'clients.phone',
-            'clients.database', 'files.id', 'files.name')
+        $clients = Client::select(
+            'clients.status',
+            'clients.first_name',
+            'clients.last_name',
+            'clients.surname',
+            'clients.phone',
+            'clients.database',
+            'files.id',
+            'files.name'
+        )
             ->join('files', 'files.id', '=', 'clients.database')
             ->groupBy('clients.phone')->havingRaw('count(clients.phone) > 1')
             ->paginate(20);
@@ -32,6 +39,12 @@ class ServiceClient
         ]);
     }
 
+    public function deleteDuplicates()
+    {
+        $data = Client::whereIn(['Недозвон', 'Удалить'])->get();
+        return response()->json($data);
+    }
+
     /**
      * @return JsonResponse
      */
@@ -39,14 +52,14 @@ class ServiceClient
     {
         $data = Client::select('id')->groupBy('phone')
             ->havingRaw('count(phone) > 1')->get();
-        if(!$data) {
+        if (!$data) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'The list of duplicates is empty.',
             ]);
         }
         $clients = [];
-        foreach($data as $key => $value) {
+        foreach ($data as $key => $value) {
             $clients[] = $value['id'];
         }
         Client::destroy($clients);
@@ -64,22 +77,22 @@ class ServiceClient
     public function search($request): JsonResponse
     {
         $table = DB::table('clients');
-        if(empty($request->client)) {
+        if (empty($request->client)) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Customer information cannot be empty',
             ]);
         }
-        if(str_word_count($request->client) > 2) {
+        if (str_word_count($request->client) > 2) {
             $bio = explode(" ", $request->client);
-            $table->where('first_name', "LIKE", "%".$bio[0]."%")
-                ->where('last_name', "LIKE", "%".$bio[1]."%")
-                ->where('surname', "LIKE", "%".$bio[2]."%");
+            $table->where('first_name', "LIKE", "%" . $bio[0] . "%")
+                ->where('last_name', "LIKE", "%" . $bio[1] . "%")
+                ->where('surname', "LIKE", "%" . $bio[2] . "%");
         } else {
-            $table->where('phone', "LIKE", "%".$request->client."%");
+            $table->where('phone', "LIKE", "%" . $request->client . "%");
         }
-        if(!empty($request->database)) {
-            $database = File::where('name', 'LIKE', '%'.$request->database.'%')
+        if (!empty($request->database)) {
+            $database = File::where('name', 'LIKE', '%' . $request->database . '%')
                 ->first('id');
             $table->where('database', $database['id']);
         }
@@ -98,7 +111,7 @@ class ServiceClient
     public function delete($id): JsonResponse
     {
         $client = Client::where('id', $id);
-        if(!$client->exists()) {
+        if (!$client->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Client not found',
@@ -119,7 +132,7 @@ class ServiceClient
     public function show($id): JsonResponse
     {
         $client = Client::find($id);
-        if(!$client) {
+        if (!$client) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Client not found',
@@ -147,7 +160,7 @@ class ServiceClient
             'surname' => 'required',
             'phone' => 'required',
         ]);
-        if($validator->fails()) {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => FALSE,
                 'errors' => $validator->errors(),
@@ -179,14 +192,14 @@ class ServiceClient
      */
     public function setStatus($request, $id): JsonResponse
     {
-        if(!isset($request->status)) {
+        if (!isset($request->status)) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'The [status] field is mandatory',
             ]);
         }
         $client = Client::where('id', $id);
-        if(!$client->exists()) {
+        if (!$client->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Client not found',
@@ -201,7 +214,7 @@ class ServiceClient
         $freeClient = Client::select('id')->where('processed', 0)
             ->inRandomOrder()->first();
         $current_client = NULL;
-        if($freeClient) {
+        if ($freeClient) {
             $current_client = $freeClient->id;
         }
         $manager_id = $processedClient->first()['manager_id'];
@@ -227,18 +240,18 @@ class ServiceClient
     public function transfer($request, $id): JsonResponse
     {
         try {
-            if(!isset($request->manager_id)) {
+            if (!isset($request->manager_id)) {
                 return response()->json([
                     'status' => FALSE,
                     'message' => 'The [manager_id] field is mandatory',
                 ]);
             }
             $current_manager = User::where('current_client', $id);
-            if($current_manager->exists()) {
+            if ($current_manager->exists()) {
                 $freeClient = Client::select('id')->where('processed', 0)
                     ->inRandomOrder()->first();
                 $current_client = NULL;
-                if($freeClient) {
+                if ($freeClient) {
                     $current_client = $freeClient->id;
                 }
                 $current_manager->update(['current_client' => $current_client]);
@@ -256,7 +269,7 @@ class ServiceClient
                 'status' => TRUE,
                 'message' => 'Client successfully transferred to another manager',
             ]);
-        } catch(\Exception $exception) {
+        } catch (\Exception $exception) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'An error occurred while transferring a client to another manager',
@@ -270,17 +283,32 @@ class ServiceClient
     public function activeClients(): JsonResponse
     {
         $activeClients = DB::table('processed_clients')
-            ->select('clients.id', 'users.id', 'processed_clients.processed',
-                'processed_clients.client_id', 'processed_clients.manager_id', 'clients.first_name as client_first_name', 'clients.last_name as client_last_name',
-                'clients.surname as client_surname', 'clients.phone as client_phone', 'users.login as manager_login', 'files.id', 'files.name as database')
+            ->select(
+                'clients.id',
+                'users.id',
+                'processed_clients.processed',
+                'processed_clients.client_id',
+                'processed_clients.manager_id',
+                'clients.first_name as client_first_name',
+                'clients.last_name as client_last_name',
+                'clients.surname as client_surname',
+                'clients.phone as client_phone',
+                'users.login as manager_login',
+                'files.id',
+                'files.name as database'
+            )
             ->join('clients', 'clients.id', '=', 'processed_clients.client_id')
-            ->join('users', 'users.id', '=',
-                'processed_clients.manager_id')
+            ->join(
+                'users',
+                'users.id',
+                '=',
+                'processed_clients.manager_id'
+            )
             ->join('files', 'files.id', '=', 'clients.database')
             ->where('processed_clients.processed', 0)->get();
 
         $clientsList = [];
-        foreach($activeClients as $client) {
+        foreach ($activeClients as $client) {
             $clientsList[] = [
                 'client' => [
                     'first_name' => $client->client_first_name,
@@ -298,5 +326,4 @@ class ServiceClient
             'data' => $clientsList,
         ]);
     }
-
 }

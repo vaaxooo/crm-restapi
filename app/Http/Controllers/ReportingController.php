@@ -57,9 +57,9 @@ class ReportingController extends Controller
     /**
      * @return JsonResponse
      */
-    public function expenseHistory(): JsonResponse
+    public function expenseHistory(Request $request): JsonResponse
     {
-        return $this->reporting->expenseHistory();
+        return $this->reporting->expenseHistory($request);
     }
 
     /**
@@ -74,16 +74,17 @@ class ReportingController extends Controller
     /**
      * @return mixed
      */
-    public function kurs() {
+    public function kurs()
+    {
         return $this->reporting->kurs();
     }
 
     /**
      * @return JsonResponse
      */
-    public function salaries(): JsonResponse
+    public function salaries(Request $request): JsonResponse
     {
-        return $this->reporting->salaries();
+        return $this->reporting->salaries($request);
     }
 
     /**
@@ -101,6 +102,6 @@ class ReportingController extends Controller
      */
     public function payoutsHistory(Request $request): JsonResponse
     {
-        return $this->reporting->payoutsHistory($request);
+        return $this->reporting->payoutsHistory();
     }
 }

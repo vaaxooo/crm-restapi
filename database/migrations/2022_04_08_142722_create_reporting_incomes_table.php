@@ -15,7 +15,7 @@ class CreateReportingIncomesTable extends Migration
     {
         Schema::create('reporting_incomes', function (Blueprint $table) {
             $table->id();
-            $table->string('date');
+            $table->date('date');
             $table->string('comment')->nullable();
             $table->string('manager_bio');
             $table->string('manager_id');

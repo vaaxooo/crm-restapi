@@ -23,6 +23,7 @@ class ReportingIncome extends Model
         'total_amount',
         'payout',
         'salary',
+        'currency',
         'role'
     ];
 }
