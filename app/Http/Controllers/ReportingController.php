@@ -55,6 +55,7 @@ class ReportingController extends Controller
     }
 
     /**
+     * @param  Request  $request
      * @return JsonResponse
      */
     public function expenseHistory(Request $request): JsonResponse
@@ -103,5 +104,13 @@ class ReportingController extends Controller
     public function payoutsHistory(Request $request): JsonResponse
     {
         return $this->reporting->payoutsHistory();
+    }
+
+    /**
+     * @return array
+     */
+    public function sendReport(): array
+    {
+        return $this->reporting->sendReport();
     }
 }

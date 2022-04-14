@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class CreateSettingsTable extends Migration
 {
@@ -18,13 +19,15 @@ class CreateSettingsTable extends Migration
             $table->id();
             $table->string("preinstall_text")->nullable();
             $table->string('jivo')->nullable();
+            $table->uuid('uid');
             $table->timestamps();
         });
 
         DB::table('settings')->insert([
             [
                 'preinstall_text' => NULL,
-                'jivo' => NULL
+                'jivo' => NULL,
+                'uid' => Str::uuid()
             ]
         ]);
     }

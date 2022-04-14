@@ -101,5 +101,8 @@ Route::group(['middleware' => ['api']], function ($route) {
 
         Route::post('payouts', '\App\Http\Controllers\ReportingController@payouts');
         Route::get('payouts/history', '\App\Http\Controllers\ReportingController@payoutsHistory');
+
+
+        Route::get('send', '\App\Http\Controllers\ReportingController@sendReport');
     });
 });

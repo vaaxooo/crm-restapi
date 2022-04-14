@@ -6,12 +6,12 @@ use App\Models\PayoutsHistory;
 use App\Models\User;
 use App\Models\ReportingIncome;
 use App\Models\Expense;
+use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
-use GuzzleHttp\Psr7\Request;
 use Illuminate\Support\Facades\Redis;
 
 class ServiceReporting
@@ -65,7 +65,7 @@ class ServiceReporting
                     'manager_bio' => $manager,
                     'manager_id' => $manager_id,
                     'total_amount' => $params->payout,
-                    'temp_percent' => $payout->percent
+                    'percent' => $payout->percent
                 ];
                 $total_percent += $payout->percent;
             }
@@ -80,7 +80,6 @@ class ServiceReporting
             $manager = (object) $manager;
             $processedData[$key]['payout'] = $params->payout / count($processedData); //Выплата = кол-во менеджеров / общая сумма
             $processedData[$key]['salary'] = $params->payout * $manager->temp_percent / 100; //Доход = Общая сумма / процент менеджера
-            unset($processedData[$key]['temp_percent']);
         }
         ReportingIncome::insert($processedData);
         $generalManager = User::select('first_name', 'last_name', 'surname', 'login', 'id')->where('role', 'admin')->first();
@@ -91,6 +90,7 @@ class ServiceReporting
             'manager_id' => $generalManager->id,
             'total_amount' => $params->payout,
             'payout' => 0,
+            'percent' => 10,
             'salary' => $params->payout * 10 / 100,
             'created_at' => date('Y-m-d H:i:s'),
             'role' => 'general_manager'
@@ -110,8 +110,8 @@ class ServiceReporting
     {
         $table = DB::table('reporting_incomes')->select('date', 'comment', 'manager_bio', 'currency', 'salary', 'payout', 'created_at');
         if (isset($request->dates)) {
-            $table->whereDate('date', '>=', $request->dates['start_date'])
-                ->whereDate('date', '<=', $request->dates['end_date']);
+            $table->whereDate('date', '>=', $request->start_date)
+                ->whereDate('date', '<=', $request->end_date);
         } else {
             $table->whereDate('date', '>=', \Carbon\Carbon::now()->weekday(1))
                 ->whereDate('date', '<=', new Carbon("Sunday"));
@@ -185,8 +185,8 @@ class ServiceReporting
     {
         $table = DB::table('expenses');
         if (isset($request->dates)) {
-            $table->whereDate('date', '>=', $request->dates['start_date'])
-                ->whereDate('date', '<=', $request->dates['end_date']);
+            $table->whereDate('date', '>=', $request->start_date)
+                ->whereDate('date', '<=', $request->end_date);
         } else {
             $table->whereDate('date', '>=', \Carbon\Carbon::now()->weekday(1))
                 ->whereDate('date', '<=', new Carbon("Sunday"));
@@ -227,8 +227,8 @@ class ServiceReporting
     {
         $table = DB::table('reporting_incomes')->select('manager_id', 'manager_bio', 'salary');
         if (isset($request->dates)) {
-            $table->whereDate('date', '>=', $request->dates['start_date'])
-                ->whereDate('date', '<=', $request->dates['end_date']);
+            $table->whereDate('date', '>=', $request->start_date)
+                ->whereDate('date', '<=', $request->end_date);
         } else {
             $table->whereDate('date', '>=', \Carbon\Carbon::now()->weekday(1))
                 ->whereDate('date', '<=', new Carbon("Sunday"));
@@ -346,5 +346,57 @@ class ServiceReporting
                 'usdt' => PayoutsHistory::where('currency', 'usdt')->sum('sum')
             ]
         ]);
+    }
+
+    /**
+     * @return array
+     */
+    public function sendReport(): array
+    {
+        $uid = (Setting::select('uid', 'id')->where('id', 1)->first())->uid;
+        $incomes = ReportingIncome::whereDate('date', '>=', \Carbon\Carbon::now()->weekday(1))
+            ->whereDate('date', '<=', new Carbon("Sunday"))->get();
+        $expenses = Expense::whereDate('date', '>=', \Carbon\Carbon::now()->weekday(1))
+            ->whereDate('date', '<=', new Carbon("Sunday"))->get();
+        $payouts = PayoutsHistory::whereDate('date', '>=', \Carbon\Carbon::now()->weekday(1))
+            ->whereDate('date', '<=', new Carbon("Sunday"))->get();
+
+        $incomes['uid'] = $uid;
+        $expenses['uid'] = $uid;
+        $payouts['uid'] = $uid;
+
+        $total_usd = 0;
+
+        foreach ($incomes as $key => $income) {
+            if ($key != 'uid') {
+                if (strtoupper($income->currency) == 'BTC') {
+                    $total_usd += (int)$income->payout * $this->kurs->BTCUSD;
+                    continue;
+                }
+
+                $total_usd += (int) $income->payout;
+            }
+        }
+
+
+        $balance_history = [
+            'uid' => $uid,
+            'date' => \Carbon\Carbon::now(),
+            'amount' => $total_usd,
+            'currency' => 'BTC',
+            'exchange_rate' => $this->kurs->BTCUSD
+        ];
+
+
+
+        \Amqp::publish('incomes', json_encode($incomes), ['queue' => 'incomes']);
+        \Amqp::publish('expenses', json_encode($expenses), ['queue' => 'expenses']);
+        \Amqp::publish('payouts', json_encode($payouts), ['queue' => 'payouts']);
+        \Amqp::publish('balance_history', json_encode($balance_history), ['queue' => 'balance_history']);
+
+        return [
+            'status' => TRUE,
+            'message' => 'The report was successfully sent'
+        ];
     }
 }

@@ -24,6 +24,7 @@ class ReportingIncome extends Model
         'payout',
         'salary',
         'currency',
+        'percent',
         'role'
     ];
 }
