@@ -37,6 +37,7 @@ class ServiceFiles
         }
         $table_clone = clone $table;
         $freeClients = clone $table;
+        $databaseClients = clone $table;
         $statistics
             = $table_clone->select(DB::raw('count(*) as count, files.id, clients.database, clients.status, statuses.name, statuses.id as status_id'))
             ->join('clients', 'clients.database', '=', 'files.id')
@@ -51,12 +52,13 @@ class ServiceFiles
         $databases = $table->paginate(15);
 
         $freeClients
-            = $freeClients->select(DB::raw('count(*) as count, clients.database, files.id, clients.processed'))
+            = $freeClients->select(DB::raw('count(*) as count, clients.database, files.id, clients.processed, clients.status, statuses.name, statuses.id as status_id'))
             ->join('clients', 'clients.database', '=', 'files.id')
+            ->join('statuses', 'statuses.name', '=', 'clients.status')
             ->where('clients.processed', 0)->groupBy('clients.database')->get();
-
         foreach ($freeClients as $key => $freeClient) {
             $clientData = (array)$freeClients[$key];
+            unset($clientData['name']);
             unset($clientData['processed']);
             unset($clientData['id']);
             $freeClients[$key] = array_merge(
@@ -66,11 +68,28 @@ class ServiceFiles
             $statistics[] = $freeClients[$key];
         }
 
+        $databaseClients =
+            $databaseClients->select(DB::raw('count(*) as count, clients.database, files.id, clients.processed'))
+            ->join('clients', 'clients.database', '=', 'files.id')->groupBy('clients.database')->get();
+
+        foreach ($databaseClients as $dclient) {
+            unset($dclient->id);
+            unset($dclient->processed);
+
+            foreach ($databases as $database) {
+                if ($database->id == $dclient->database) {
+                    $database->total_clients = $dclient->count;
+                }
+            }
+        }
+
+
+
         return response()->json([
             'status' => TRUE,
             'data' => [
                 'databases' => $databases,
-                'statistics' => $statistics,
+                'statistics' => $statistics
             ],
         ]);
     }
