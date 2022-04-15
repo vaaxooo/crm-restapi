@@ -41,7 +41,7 @@ class ServiceClient
 
     public function deleteDuplicates()
     {
-        $data = Client::where('status', 'Недозвон')->orWhere('Удалить')->delete();
+        $data = Client::where('status', 'Недозвон')->orWhere('status', 'Удалить')->delete();
         return response()->json($data);
     }
 
