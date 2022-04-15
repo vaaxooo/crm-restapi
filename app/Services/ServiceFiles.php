@@ -40,7 +40,8 @@ class ServiceFiles
         $statistics
             = $table_clone->select(DB::raw('count(*) as count, files.id, clients.database, clients.status'))
             ->join('clients', 'clients.database', '=', 'files.id')
-            ->groupBy('clients.status')->get();
+            ->groupBy(['clients.database', 'clients.status'])->get();
+
         $databases = $table->paginate(15);
 
         $freeClients
