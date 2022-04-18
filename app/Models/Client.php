@@ -18,6 +18,7 @@ class Client extends Model
         'first_name',
         'last_name',
         'surname',
+        'fullname',
         'phone',
         'status',
         'processed',

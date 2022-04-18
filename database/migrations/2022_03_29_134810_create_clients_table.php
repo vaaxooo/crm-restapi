@@ -18,6 +18,7 @@ class CreateClientsTable extends Migration
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('surname')->nullable();
+            $table->string('fullname')->nullable();
             $table->string('phone')->nullable();
             $table->string('status')->default("Не прозвонен");
             $table->string('region')->nullable();

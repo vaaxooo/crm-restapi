@@ -200,6 +200,7 @@ class ServiceFiles
                         'first_name' => $bio[1],
                         'last_name' => $bio[0],
                         'surname' => $bio[2],
+                        'fullname' => $client[0],
                         'phone' => str_replace(" ", "", $client[1]),
                         'database' => $database,
                     ];

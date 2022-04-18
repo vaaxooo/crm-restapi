@@ -76,33 +76,23 @@ class ServiceClient
      */
     public function search($request): JsonResponse
     {
-        $table = DB::table('clients');
+        $table = DB::table('clients')
+            ->select(DB::raw('clients.id, clients.fullname, clients.city, clients.region, clients.address, clients.phone, clients.additional_field1, clients.status, clients.database as database_id, files.id as database_id, files.name as database_name'))
+            ->join('files', 'files.id', '=', 'clients.database');
         if (empty($request->client)) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Customer information cannot be empty',
             ]);
         }
-
-        $bio = explode(" ", $request->client);
-        $table->where('first_name', "LIKE", "%" . $bio[0] . "%");
-        if (isset($bio[1])) {
-            $table->where('last_name', "LIKE", "%" . $bio[1] . "%");
-        }
-        if (isset($bio[2])) {
-            $table->where('surname', "LIKE", "%" . $bio[2] . "%");
-        }
-        $table->orWhere('phone', "LIKE", "%" . $request->client . "%");
-
+        $table->where('clients.fullname', "LIKE", "%" . $request->client . "%")
+            ->orWhere('clients.phone', "LIKE", "%" . $request->client . "%");
         if (!empty($request->database)) {
-            $database = File::where('name', 'LIKE', '%' . $request->database . '%')
-                ->first('id');
-            $table->where('database', $database['id']);
+            $table->where('files.name', $request->database);
         }
-
         return response()->json([
             'status' => TRUE,
-            'data' => $table->first(),
+            'data' => $table->paginate(20),
         ]);
     }
 
