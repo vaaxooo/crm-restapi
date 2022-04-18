@@ -169,6 +169,7 @@ class ServiceClient
             'additional_field2' => $request->additional_field2,
             'additional_field3' => $request->additional_field3,
             'information' => $request->information,
+            'fullname' => $request->fullname
         ]);
         Client::where('id', $id)->update($params);
 

@@ -33,6 +33,8 @@ class CreateClientsTable extends Migration
             $table->boolean('processed')->default(false);
             $table->integer('database')->nullable();
             $table->timestamps();
+
+            $table->index(['fullname', 'phone', 'database']);
         });
     }
 
