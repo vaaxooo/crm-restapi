@@ -85,11 +85,12 @@ class ServiceClient
                 'message' => 'Customer information cannot be empty',
             ]);
         }
-        $table->where('clients.fullname', "LIKE", "%" . $request->client . "%")
-            ->orWhere('clients.phone', "LIKE", "%" . $request->client . "%");
         if (!empty($request->database)) {
             $table->where('files.name', $request->database);
         }
+        $table->where('clients.fullname', "LIKE", "%" . $request->client . "%")
+            ->orWhere('clients.phone', "LIKE", "%" . $request->client . "%");
+
         return response()->json([
             'status' => TRUE,
             'data' => $table->paginate(20),
