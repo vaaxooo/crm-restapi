@@ -101,14 +101,48 @@ class ServiceFiles
     public function show($id): JsonResponse
     {
         try {
-            $database = File::where('id', $id)->first();
-            $database['clients'] = Client::where('database', $id)->paginate(20);
+            $table = DB::table('files');
+
+            $table_clone = clone $table;
+            $calledClients = clone $table;
+
+            $statistics
+                = $table_clone->select(DB::raw('count(*) as count, files.id, clients.database, clients.status, statuses.name, statuses.id as status_id'))
+                ->join('clients', 'clients.database', '=', 'files.id')
+                ->join('statuses', 'statuses.name', '=', 'clients.status')
+                ->where('files.id', $id)
+                ->groupBy(['files.id', 'clients.status'])->get();
+
+            foreach ($statistics as $key => $stats) {
+                unset($stats->id);
+                unset($stats->name);
+            }
+
+            $calledClients = $calledClients->select(DB::raw('clients.database, files.id, processed_clients.client_id, clients.id, count(*) as count'))
+                    ->join('clients', 'clients.database', '=', 'files.id')
+                    ->join('processed_clients', 'processed_clients.client_id', '=', 'clients.id')
+                    ->where('files.id', $id)
+                    ->where('processed_clients.processed', 1)
+                    ->groupBy('files.id')->count('processed_clients.id');
+
+
+            $total_count = DB::table('clients')->where('database', $id)->count('id');
+            $stats = [
+                'statuses' => $statistics,
+                'total_statistic' => [
+                    'total_count' => $total_count,
+                    'remainder' => $total_count - $calledClients,
+                    'called_clients' => $calledClients
+                ]
+            ];
+
+            $database = $table->where('id', $id)->paginate(15);
 
             return response()->json([
                 'status' => TRUE,
                 'data' => [
                     'database' => $database,
-                    'statistic' => (new ServiceClient())->statistic($id),
+                    'statistic' => $stats,
                 ],
             ]);
         } catch (Exception $exception) {
