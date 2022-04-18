@@ -84,18 +84,16 @@ class ServiceClient
             ]);
         }
 
-        if (str_word_count($request->client) > 2) {
-            $bio = explode(" ", $request->client);
-            $table->where('first_name', "LIKE", "%" . $bio[0] . "%");
-            if (isset($bio[1])) {
-                $table->where('last_name', "LIKE", "%" . $bio[1] . "%");
-            }
-            if (isset($bio[2])) {
-                $table->where('surname', "LIKE", "%" . $bio[2] . "%");
-            }
-        } else {
-            $table->where('phone', "LIKE", "%" . $request->client . "%");
+        $bio = explode(" ", $request->client);
+        $table->where('first_name', "LIKE", "%" . $bio[0] . "%");
+        if (isset($bio[1])) {
+            $table->where('last_name', "LIKE", "%" . $bio[1] . "%");
         }
+        if (isset($bio[2])) {
+            $table->where('surname', "LIKE", "%" . $bio[2] . "%");
+        }
+        $table->orWhere('phone', "LIKE", "%" . $request->client . "%");
+
         if (!empty($request->database)) {
             $database = File::where('name', 'LIKE', '%' . $request->database . '%')
                 ->first('id');
