@@ -70,7 +70,7 @@ class ServiceFiles
 
         $databaseClients =
             $databaseClients->select(DB::raw('count(*) as count, clients.database, files.id, clients.processed'))
-            ->join('clients', 'clients.database', '=', 'files.id')->groupBy('clients.database')->get();
+            ->join('clients', 'clients.database', '=', 'files.id')->groupBy('files.id')->get();
 
         foreach ($databaseClients as $dclient) {
             unset($dclient->id);

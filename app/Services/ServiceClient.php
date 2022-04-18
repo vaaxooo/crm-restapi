@@ -83,11 +83,16 @@ class ServiceClient
                 'message' => 'Customer information cannot be empty',
             ]);
         }
+
         if (str_word_count($request->client) > 2) {
             $bio = explode(" ", $request->client);
-            $table->where('first_name', "LIKE", "%" . $bio[0] . "%")
-                ->where('last_name', "LIKE", "%" . $bio[1] . "%")
-                ->where('surname', "LIKE", "%" . $bio[2] . "%");
+            $table->where('first_name', "LIKE", "%" . $bio[0] . "%");
+            if (isset($bio[1])) {
+                $table->where('last_name', "LIKE", "%" . $bio[1] . "%");
+            }
+            if (isset($bio[2])) {
+                $table->where('surname', "LIKE", "%" . $bio[2] . "%");
+            }
         } else {
             $table->where('phone', "LIKE", "%" . $request->client . "%");
         }
