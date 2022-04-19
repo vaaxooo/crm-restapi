@@ -119,11 +119,11 @@ class ServiceFiles
             }
 
             $calledClients = $calledClients->select(DB::raw('clients.database, files.id, processed_clients.client_id, clients.id, count(*) as count'))
-                    ->join('clients', 'clients.database', '=', 'files.id')
-                    ->join('processed_clients', 'processed_clients.client_id', '=', 'clients.id')
-                    ->where('files.id', $id)
-                    ->where('processed_clients.processed', 1)
-                    ->groupBy('files.id')->count('processed_clients.id');
+                ->join('clients', 'clients.database', '=', 'files.id')
+                ->join('processed_clients', 'processed_clients.client_id', '=', 'clients.id')
+                ->where('files.id', $id)
+                ->where('processed_clients.processed', 1)
+                ->groupBy('files.id')->count('processed_clients.id');
 
 
             $total_count = DB::table('clients')->where('database', $id)->count('id');
@@ -135,6 +135,8 @@ class ServiceFiles
                     'called_clients' => $calledClients
                 ]
             ];
+
+            $database['clients'] = Client::where('database', $id)->paginate(20);
 
             $database = $table->where('id', $id)->paginate(15);
 
