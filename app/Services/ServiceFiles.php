@@ -137,7 +137,11 @@ class ServiceFiles
             ];
 
             $database = $table->where('id', $id)->paginate(15);
-            $clients = Client::where('database', $id)->paginate(20);
+            $clients = DB::table('clients')->select(DB::raw('clients.*, processed_clients.client_id as id, processed_clients.manager_id as manager_id, users.id as manager_id, users.login as manager'))
+                ->join('processed_clients', 'processed_clients.client_id', '=', 'clients.id')
+                ->join('users', 'users.id', '=', 'processed_clients.manager_id')
+                ->where('clients.database', $id)
+                ->paginate(20);
 
             return response()->json([
                 'status' => TRUE,
