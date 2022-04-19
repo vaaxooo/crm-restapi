@@ -29,6 +29,7 @@ Route::group(['middleware' => ['api']], function ($route) {
     Route::group(['prefix' => 'managers'], function () {
         Route::get('all', '\App\Http\Controllers\ManagerController@allManagers');
         Route::get('{id}/get', '\App\Http\Controllers\ManagerController@showManager');
+        Route::get('get-current-client', '\App\Http\Controllers\ManagerController@getCurrentClient');
         Route::post('create', '\App\Http\Controllers\ManagerController@addManager');
         Route::patch('{id}/update', '\App\Http\Controllers\ManagerController@updateManager');
         Route::delete('{id}/delete', '\App\Http\Controllers\ManagerController@deleteManager');

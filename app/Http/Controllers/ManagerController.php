@@ -38,10 +38,25 @@ class ManagerController extends Controller
     {
         return response()->json([
             'status' => TRUE,
-            'data' => User::select('login', 'first_name', 'last_name',
-                'surname', 'role', 'email', 'created_at', 'last_online')->where('id', $id)->where('role',
-                'manager')->first(),
+            'data' => User::select(
+                'login',
+                'first_name',
+                'last_name',
+                'surname',
+                'role',
+                'email',
+                'created_at',
+                'last_online'
+            )->where('id', $id)->where(
+                'role',
+                'manager'
+            )->first(),
         ]);
+    }
+
+    public function getCurrentClient(): JsonResponse
+    {
+        return $this->manager->getCurrentClient();
     }
 
     /**

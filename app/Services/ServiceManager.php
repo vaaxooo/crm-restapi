@@ -6,6 +6,7 @@ use App\Models\HistoryTest;
 use App\Models\Test;
 use App\Models\TestQuestions;
 use App\Models\User;
+use App\Models\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -24,9 +25,34 @@ class ServiceManager
     {
         return response()->json([
             'status' => TRUE,
-            'data' => User::select('id', 'login', 'first_name', 'last_name',
-                'surname', 'role', 'email', 'last_online', 'created_at')->where('role',
-                'manager')->paginate(20),
+            'data' => User::select(
+                'id',
+                'login',
+                'first_name',
+                'last_name',
+                'surname',
+                'role',
+                'email',
+                'last_online',
+                'created_at'
+            )->where(
+                'role',
+                'manager'
+            )->paginate(20),
+        ]);
+    }
+
+    public function getCurrentClient()
+    {
+        if (!isset(auth()->user()->current_client)) {
+            return response()->json([
+                'status' => TRUE,
+                'data' => []
+            ]);
+        }
+        return response()->json([
+            'status' => TRUE,
+            'data' => Client::where('id', auth()->user()->current_client)->first()
         ]);
     }
 
@@ -45,7 +71,7 @@ class ServiceManager
             'email' => 'required|unique:users',
             'password' => 'required|min:8',
         ]);
-        if($validator->fails()) {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => FALSE,
                 'errors' => $validator->errors(),
@@ -74,14 +100,14 @@ class ServiceManager
             'last_name' => 'required',
             'surname' => 'required',
         ]);
-        if($validator->fails()) {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => FALSE,
                 'errors' => $validator->errors(),
             ]);
         }
         $params = $validator->validated();
-        if(!empty($request->password)) {
+        if (!empty($request->password)) {
             $params['password'] = Hash::make($request->password);
         }
         User::find($id)
@@ -99,7 +125,7 @@ class ServiceManager
      */
     public function delete($id): JsonResponse
     {
-        if(User::find($id)) {
+        if (User::find($id)) {
             User::find($id)->delete();
 
             return response()->json([
@@ -120,7 +146,7 @@ class ServiceManager
     public function statistic(): JsonResponse
     {
         try {
-            if(Redis::get('statistics')) {
+            if (Redis::get('statistics')) {
                 return response()->json([
                     'status' => TRUE,
                     'data' => json_decode(Redis::get('statistics')),
@@ -129,8 +155,8 @@ class ServiceManager
             $managers = DB::select(DB::raw('WITH m AS (SELECT * FROM users WHERE role = "manager")
 SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GROUP BY pc.id'));
             $processedManagers = [];
-            foreach($managers as $manager) {
-                if(isset($processedManagers[$manager->manager_id][$manager->status])) {
+            foreach ($managers as $manager) {
+                if (isset($processedManagers[$manager->manager_id][$manager->status])) {
                     $processedManagers[$manager->manager_id][$manager->status]
                         = (int)$processedManagers[$manager->manager_id][$manager->status] + 1;
                 } else {
@@ -138,7 +164,7 @@ SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GRO
                 }
             }
             $managers = [];
-            foreach($processedManagers as $key => $statistic) {
+            foreach ($processedManagers as $key => $statistic) {
                 $managers[] = [
                     'manager_id' => $key,
                     'processed_clients' => $statistic,
@@ -150,7 +176,7 @@ SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GRO
                 'status' => TRUE,
                 'data' => $managers,
             ]);
-        } catch(\Exception $exception) {
+        } catch (\Exception $exception) {
             return response()->json([
                 'status' => FALSE,
                 'message' => "An error occurred while processing the statistics",
@@ -179,8 +205,12 @@ SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GRO
     public function getPassedTests($id): JsonResponse
     {
         $tests = DB::table('history_tests')
-            ->select('tests.id', 'history_tests.test_id',
-                'history_tests.manager_id', 'tests.name')
+            ->select(
+                'tests.id',
+                'history_tests.test_id',
+                'history_tests.manager_id',
+                'tests.name'
+            )
             ->join('tests', 'tests.id', '=', 'history_tests.test_id')
             ->where('history_tests.manager_id', $id)->get();
 
@@ -199,11 +229,15 @@ SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GRO
     {
         $test = DB::table('history_tests')
             ->join('tests', 'tests.id', '=', 'history_tests.test_id')
-            ->join('test_questions', 'test_questions.test_id', '=',
-                'history_tests.test_id')
+            ->join(
+                'test_questions',
+                'test_questions.test_id',
+                '=',
+                'history_tests.test_id'
+            )
             ->where('history_tests.test_id', $test_id)->where('manager_id', $id)
             ->first();
-        if(!$test) {
+        if (!$test) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Test not found',
@@ -224,13 +258,13 @@ SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GRO
      */
     public function passingTest($request, $id, $test_id): JsonResponse
     {
-        if(!isset($request->validator)) {
+        if (!isset($request->validator)) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'The [answer] field is required',
             ]);
         }
-        if(!Test::where('id', $test_id)->exists()) {
+        if (!Test::where('id', $test_id)->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Test not found',

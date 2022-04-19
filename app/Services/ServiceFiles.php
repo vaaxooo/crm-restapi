@@ -136,15 +136,15 @@ class ServiceFiles
                 ]
             ];
 
-            $database['clients'] = Client::where('database', $id)->paginate(20);
-
             $database = $table->where('id', $id)->paginate(15);
+            $clients = Client::where('database', $id)->paginate(20);
 
             return response()->json([
                 'status' => TRUE,
                 'data' => [
                     'database' => $database,
-                    'statistic' => $stats,
+                    'clients' => $clients,
+                    'statistic' => $stats
                 ],
             ]);
         } catch (Exception $exception) {
