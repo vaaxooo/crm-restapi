@@ -137,11 +137,22 @@ class ServiceFiles
             ];
 
             $database = $table->where('id', $id)->paginate(15);
-            $clients = DB::table('clients')->select(DB::raw('clients.*, processed_clients.client_id as id, processed_clients.manager_id as manager_id, users.id as manager_id, users.login as manager'))
-                ->join('processed_clients', 'processed_clients.client_id', '=', 'clients.id')
-                ->join('users', 'users.id', '=', 'processed_clients.manager_id')
-                ->where('clients.database', $id)
+            $clients = Client::where('database', $id)
                 ->paginate(20);
+
+            foreach ($clients as $client) {
+
+                $manager = DB::table('processed_clients')->select(DB::raw('processed_clients.client_id as id, processed_clients.manager_id as manager_id, users.id as manager_id, users.login as login'))
+                    ->join('users', 'users.id', '=', 'processed_clients.manager_id')
+                    ->where('processed_clients.client_id', $client->id)->orderBy('id', 'desc')->first();
+
+                if ($manager) {
+                    $client->manager = [
+                        'id' => $manager->manager_id,
+                        'login' => $manager->login
+                    ];
+                }
+            }
 
             return response()->json([
                 'status' => TRUE,
