@@ -234,12 +234,12 @@ class ServiceFiles
      * Import clients in DataBase
      * @param  array  $clients
      * @param         $database
-     * @return JsonResponse
+     * @return false
      */
     private function importClients(array $clients, $database)
     {
-        try {
             unset($clients[0][0]); //Remove headers (bio, phone)
+            $webSettings = Setting::select('preinstall_text')->where('id', 1)->first();
             foreach ($clients as $circle => $circle_clients) {
                 if (count($circle_clients) < 2) {
                     break;
@@ -254,12 +254,12 @@ class ServiceFiles
                         'fullname' => $client[0],
                         'phone' => str_replace(" ", "", $client[1]),
                         'database' => $database,
+                        'information' => $webSettings->preinstall_text
                     ];
                 }
                 Client::insert($processedClients);
             }
             $freeManagers = User::where('current_client', '=', NULL)->get();
-            $webSettings = Setting::select('preinstall_text')->where('id', 1)->first();
             foreach ($freeManagers as $manager) {
                 $freeClient = Client::where('processed', 0)
                     ->where('database', $database)->inRandomOrder();
@@ -273,18 +273,11 @@ class ServiceFiles
                     ->update(['processed' => 1]);
                 ProcessedClient::create([
                     'client_id' => $clientData->id,
-                    'manager_id' => $manager->id,
-                    'information' => $webSettings->preinstall_text
+                    'manager_id' => $manager->id
                 ]);
             }
 
             return FALSE;
-        } catch (Exception $exception) {
-            return response()->json([
-                'status' => FALSE,
-                'message' => 'An error occurred when importing clients',
-            ]);
-        }
     }
 
 

@@ -143,9 +143,10 @@ class ServiceManager
     }
 
     /**
+     * @param $request
      * @return JsonResponse
      */
-    public function statistic(): JsonResponse
+    public function statistic($request): JsonResponse
     {
         if(Redis::get('statistics')) {
             return response()->json([
@@ -172,7 +173,7 @@ SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GRO
                 'processed_clients' => $statistic,
             ];
         }
-        Redis::set('statistics', json_encode($managers), 'EX', 86400);
+        Redis::set('statistics', json_encode($managers), 'EX', 24200);
 
         return response()->json([
             'status' => TRUE,
