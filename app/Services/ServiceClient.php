@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Client;
 use App\Models\File;
 use App\Models\ProcessedClient;
+use App\Models\Status;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -200,10 +201,11 @@ class ServiceClient
                 'message' => 'Client not found',
             ]);
         }
-        $client->update(['status' => $request->status]);
+        $status_name = (Status::select('id', 'name')->where('id', $id)->first())['name'];
+        $client->update(['status' => $status_name]);
         $processedClient = ProcessedClient::where('client_id', $id);
         $processedClient->update([
-            'status' => $request->status,
+            'status' => $status_name,
             'processed' => 1,
         ]);
         $freeClient = Client::select('id')->where('processed', 0)
