@@ -44,15 +44,17 @@ class ServiceManager
 
     public function getCurrentClient()
     {
-        if (!isset(auth()->user()->current_client)) {
+        if(!isset(auth()->user()->current_client)) {
             return response()->json([
                 'status' => TRUE,
-                'data' => []
+                'data' => [],
             ]);
         }
+
         return response()->json([
             'status' => TRUE,
-            'data' => Client::where('id', auth()->user()->current_client)->first()
+            'data' => Client::where('id', auth()->user()->current_client)
+                ->first(),
         ]);
     }
 
@@ -71,7 +73,7 @@ class ServiceManager
             'email' => 'required|unique:users',
             'password' => 'required|min:8',
         ]);
-        if ($validator->fails()) {
+        if($validator->fails()) {
             return response()->json([
                 'status' => FALSE,
                 'errors' => $validator->errors(),
@@ -100,14 +102,14 @@ class ServiceManager
             'last_name' => 'required',
             'surname' => 'required',
         ]);
-        if ($validator->fails()) {
+        if($validator->fails()) {
             return response()->json([
                 'status' => FALSE,
                 'errors' => $validator->errors(),
             ]);
         }
         $params = $validator->validated();
-        if (!empty($request->password)) {
+        if(!empty($request->password)) {
             $params['password'] = Hash::make($request->password);
         }
         User::find($id)
@@ -125,7 +127,7 @@ class ServiceManager
      */
     public function delete($id): JsonResponse
     {
-        if (User::find($id)) {
+        if(User::find($id)) {
             User::find($id)->delete();
 
             return response()->json([
@@ -145,43 +147,37 @@ class ServiceManager
      */
     public function statistic(): JsonResponse
     {
-        try {
-            if (Redis::get('statistics')) {
-                return response()->json([
-                    'status' => TRUE,
-                    'data' => json_decode(Redis::get('statistics')),
-                ]);
-            }
-            $managers = DB::select(DB::raw('WITH m AS (SELECT * FROM users WHERE role = "manager")
-SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GROUP BY pc.id'));
-            $processedManagers = [];
-            foreach ($managers as $manager) {
-                if (isset($processedManagers[$manager->manager_id][$manager->status])) {
-                    $processedManagers[$manager->manager_id][$manager->status]
-                        = (int)$processedManagers[$manager->manager_id][$manager->status] + 1;
-                } else {
-                    $processedManagers[$manager->manager_id][$manager->status] = 1;
-                }
-            }
-            $managers = [];
-            foreach ($processedManagers as $key => $statistic) {
-                $managers[] = [
-                    'manager_id' => $key,
-                    'processed_clients' => $statistic,
-                ];
-            }
-            Redis::set('statistics', json_encode($managers), 'EX', 86400);
-
+        if(Redis::get('statistics')) {
             return response()->json([
                 'status' => TRUE,
-                'data' => $managers,
-            ]);
-        } catch (\Exception $exception) {
-            return response()->json([
-                'status' => FALSE,
-                'message' => "An error occurred while processing the statistics",
+                'data' => json_decode(Redis::get('statistics')),
             ]);
         }
+        $managers = DB::select(DB::raw('WITH m AS (SELECT * FROM users WHERE role = "manager")
+SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GROUP BY pc.id'));
+        $processedManagers = [];
+        foreach($managers as $manager) {
+            if(isset($processedManagers[$manager->manager_id][$manager->status])) {
+                $processedManagers[$manager->manager_id][$manager->status]
+                    = (int)$processedManagers[$manager->manager_id][$manager->status]
+                    + 1;
+            } else {
+                $processedManagers[$manager->manager_id][$manager->status] = 1;
+            }
+        }
+        $managers = [];
+        foreach($processedManagers as $key => $statistic) {
+            $managers[] = [
+                'manager_id' => $key,
+                'processed_clients' => $statistic,
+            ];
+        }
+        Redis::set('statistics', json_encode($managers), 'EX', 86400);
+
+        return response()->json([
+            'status' => TRUE,
+            'data' => $managers,
+        ]);
     }
 
     /**
@@ -237,7 +233,7 @@ SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GRO
             )
             ->where('history_tests.test_id', $test_id)->where('manager_id', $id)
             ->first();
-        if (!$test) {
+        if(!$test) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Test not found',
@@ -258,13 +254,13 @@ SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GRO
      */
     public function passingTest($request, $id, $test_id): JsonResponse
     {
-        if (!isset($request->validator)) {
+        if(!isset($request->validator)) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'The [answer] field is required',
             ]);
         }
-        if (!Test::where('id', $test_id)->exists()) {
+        if(!Test::where('id', $test_id)->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Test not found',
