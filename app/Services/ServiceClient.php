@@ -136,7 +136,7 @@ class ServiceClient
 
         return response()->json([
             'status' => TRUE,
-            'data' => $client->first(),
+            'data' => $client,
         ]);
     }
 
