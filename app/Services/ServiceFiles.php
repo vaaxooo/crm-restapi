@@ -103,36 +103,42 @@ class ServiceFiles
         try {
             $table = DB::table('files');
 
-            $table_clone = clone $table;
-            $calledClients = clone $table;
+            $table = clone $table;
 
             $statistics
-                = $table_clone->select(DB::raw('count(*) as count, files.id, clients.database, clients.status, statuses.name, statuses.id as status_id'))
+                = $table->select(DB::raw('count(*) as count, files.id, clients.database, clients.status, statuses.name, statuses.id as status_id'))
                 ->join('clients', 'clients.database', '=', 'files.id')
                 ->join('statuses', 'statuses.name', '=', 'clients.status')
                 ->where('files.id', $id)
                 ->groupBy(['files.id', 'clients.status'])->get();
 
-            foreach ($statistics as $key => $stats) {
+            // $calledClients = $calledClients->select(DB::raw('clients.database, files.id, processed_clients.client_id, clients.id, count(*) as count'))
+            //     ->join('clients', 'clients.database', '=', 'files.id')
+            //     ->join('processed_clients', 'processed_clients.client_id', '=', 'clients.id')
+            //     ->where('files.id', $id)
+            //     ->where('processed_clients.processed', 1)
+            //     ->groupBy('files.id')->count('processed_clients.id');
+
+            $total_count = 0;
+            $remainder = 0;
+            $called_clients = 0;
+            foreach ($statistics as $stats) {
                 unset($stats->id);
                 unset($stats->name);
+                $total_count += $stats->count;
+                if ($stats->status == "Не прозвонен") {
+                    $remainder = $stats->count;
+                } else {
+                    $called_clients += $stats->count;
+                }
             }
 
-            $calledClients = $calledClients->select(DB::raw('clients.database, files.id, processed_clients.client_id, clients.id, count(*) as count'))
-                ->join('clients', 'clients.database', '=', 'files.id')
-                ->join('processed_clients', 'processed_clients.client_id', '=', 'clients.id')
-                ->where('files.id', $id)
-                ->where('processed_clients.processed', 1)
-                ->groupBy('files.id')->count('processed_clients.id');
-
-
-            $total_count = DB::table('clients')->where('database', $id)->count('id');
             $stats = [
                 'statuses' => $statistics,
                 'total_statistic' => [
                     'total_count' => $total_count,
-                    'remainder' => $total_count - $calledClients,
-                    'called_clients' => $calledClients
+                    'remainder' => $remainder,
+                    'called_clients' => $called_clients
                 ]
             ];
 
