@@ -100,80 +100,69 @@ class ServiceFiles
      */
     public function show($id): JsonResponse
     {
-        try {
-            $table = DB::table('files');
+        $statistics
+            = DB::table('files')->select(DB::raw('count(*) as count, files.id, clients.database, clients.status, statuses.name, statuses.id as status_id'))
+            ->join('clients', 'clients.database', '=', 'files.id')
+            ->join('statuses', 'statuses.name', '=', 'clients.status')
+            ->where('files.id', $id)
+            ->groupBy(['files.id', 'clients.status'])->get();
 
-            $table = clone $table;
+        // $calledClients = $calledClients->select(DB::raw('clients.database, files.id, processed_clients.client_id, clients.id, count(*) as count'))
+        //     ->join('clients', 'clients.database', '=', 'files.id')
+        //     ->join('processed_clients', 'processed_clients.client_id', '=', 'clients.id')
+        //     ->where('files.id', $id)
+        //     ->where('processed_clients.processed', 1)
+        //     ->groupBy('files.id')->count('processed_clients.id');
 
-            $statistics
-                = $table->select(DB::raw('count(*) as count, files.id, clients.database, clients.status, statuses.name, statuses.id as status_id'))
-                ->join('clients', 'clients.database', '=', 'files.id')
-                ->join('statuses', 'statuses.name', '=', 'clients.status')
-                ->where('files.id', $id)
-                ->groupBy(['files.id', 'clients.status'])->get();
-
-            // $calledClients = $calledClients->select(DB::raw('clients.database, files.id, processed_clients.client_id, clients.id, count(*) as count'))
-            //     ->join('clients', 'clients.database', '=', 'files.id')
-            //     ->join('processed_clients', 'processed_clients.client_id', '=', 'clients.id')
-            //     ->where('files.id', $id)
-            //     ->where('processed_clients.processed', 1)
-            //     ->groupBy('files.id')->count('processed_clients.id');
-
-            $total_count = 0;
-            $remainder = 0;
-            $called_clients = 0;
-            foreach ($statistics as $stats) {
-                unset($stats->id);
-                unset($stats->name);
-                $total_count += $stats->count;
-                if ($stats->status == "Не прозвонен") {
-                    $remainder = $stats->count;
-                } else {
-                    $called_clients += $stats->count;
-                }
+        $total_count = 0;
+        $remainder = 0;
+        $called_clients = 0;
+        foreach ($statistics as $stats) {
+            unset($stats->id);
+            unset($stats->name);
+            $total_count += $stats->count;
+            if ($stats->status == "Не прозвонен") {
+                $remainder = $stats->count;
+            } else {
+                $called_clients += $stats->count;
             }
-
-            $stats = [
-                'statuses' => $statistics,
-                'total_statistic' => [
-                    'total_count' => $total_count,
-                    'remainder' => $remainder,
-                    'called_clients' => $called_clients
-                ]
-            ];
-
-            $database = $table->where('id', $id)->paginate(15);
-            $clients = Client::where('database', $id)
-                ->paginate(20);
-
-            foreach ($clients as $client) {
-
-                $manager = DB::table('processed_clients')->select(DB::raw('processed_clients.client_id as id, processed_clients.manager_id as manager_id, users.id as manager_id, users.login as login'))
-                    ->join('users', 'users.id', '=', 'processed_clients.manager_id')
-                    ->where('processed_clients.client_id', $client->id)->orderBy('id', 'desc')->first();
-
-                if ($manager) {
-                    $client->manager = [
-                        'id' => $manager->manager_id,
-                        'login' => $manager->login
-                    ];
-                }
-            }
-
-            return response()->json([
-                'status' => TRUE,
-                'data' => [
-                    'database' => $database,
-                    'clients' => $clients,
-                    'statistic' => $stats
-                ],
-            ]);
-        } catch (Exception $exception) {
-            return response()->json([
-                'status' => FALSE,
-                'message' => 'An error occurred while executing the request',
-            ]);
         }
+
+        $stats = [
+            'statuses' => $statistics,
+            'total_statistic' => [
+                'total_count' => $total_count,
+                'remainder' => $remainder,
+                'called_clients' => $called_clients
+            ]
+        ];
+
+        $database = DB::table('files')->where('id', $id)->paginate(15);
+        $clients = Client::where('database', $id)
+            ->paginate(20);
+
+        foreach ($clients as $client) {
+
+            $manager = DB::table('processed_clients')->select(DB::raw('processed_clients.client_id as id, processed_clients.manager_id as manager_id, users.id as manager_id, users.login as login'))
+                ->join('users', 'users.id', '=', 'processed_clients.manager_id')
+                ->where('processed_clients.client_id', $client->id)->orderBy('id', 'desc')->first();
+
+            if ($manager) {
+                $client->manager = [
+                    'id' => $manager->manager_id,
+                    'login' => $manager->login
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => TRUE,
+            'data' => [
+                'database' => $database,
+                'clients' => $clients,
+                'statistic' => $stats
+            ],
+        ]);
     }
 
     /**
