@@ -214,13 +214,13 @@ class ServiceClient
         if ($freeClient) {
             $current_client = $freeClient->id;
         }
-        $manager_id = $processedClient->first()['manager_id'];
-        User::where('id', $manager_id)
+        $manager = $processedClient->first();
+        User::where('id', $manager->manager_id)
             ->update(['current_client' => $current_client]);
         Client::where('id', $freeClient->id)->update(['processed' => 1]);
         ProcessedClient::create([
             'client_id' => $current_client,
-            'manager_id' => $manager_id,
+            'manager_id' => $manager->manager_id,
         ]);
 
         return response()->json([
