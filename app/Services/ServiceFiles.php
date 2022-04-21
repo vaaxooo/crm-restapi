@@ -179,6 +179,7 @@ class ServiceFiles
         try {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|min:4',
+                'method' => 'required'
             ]);
             if ($validator->fails()) {
                 return response()->json([
@@ -203,24 +204,42 @@ class ServiceFiles
                     'message' => 'The file has not been uploaded',
                 ]);
             }
-            $filename = md5(time() . '_' . pathinfo(
-                $file->getClientOriginalName(),
-                PATHINFO_FILENAME
-            )) . '.'
-                . $file->getClientOriginalExtension();
-            Storage::disk('local')->putFileAs('databases', $file, $filename);
-            $filePath = 'databases/' . $filename;
-            $database = File::create([
-                'name' => $request->name,
-                'path' => $filePath,
-            ]);
-            $this->importClients((new ClientsImport)->toArray($file),
-                $database->id
-            );
+
+            if ($request->method == "uploadFile") {
+                $data = $this->parseClientsFromDatabase((new ClientsImport)->toArray($file));
+                return response()->json([
+                    'status' => TRUE,
+                    'data' => $data
+                ]);
+            }
+
+            if ($request->method == "processedClients") {
+
+                if (!isset($request->clients_list)) {
+                    return response()->json([
+                        'status' => FALSE,
+                        'message' => 'The [clients_list] field required'
+                    ]);
+                }
+
+                $filename = md5(time() . '_' . pathinfo(
+                    $file->getClientOriginalName(),
+                    PATHINFO_FILENAME
+                )) . '.'
+                    . $file->getClientOriginalExtension();
+                Storage::disk('local')->putFileAs('databases', $file, $filename);
+                $filePath = 'databases/' . $filename;
+                $database = File::create([
+                    'name' => $request->name,
+                    'path' => $filePath,
+                ]);
+                $this->importClients((new ClientsImport)->toArray($file), $database->id);
+            }
+
 
             return response()->json([
                 'status' => TRUE,
-                'message' => 'File successfully uploaded',
+                'message' => 'File successfully uploaded'
             ]);
         } catch (Exception $exception) {
             return response()->json([
@@ -228,6 +247,14 @@ class ServiceFiles
                 'message' => 'There was an error when I downloaded the file!',
             ]);
         }
+    }
+
+    public function parseClientsFromDatabase(array $clients)
+    {
+        return [
+            'status' => TRUE,
+            'data' => $clients
+        ];
     }
 
     /**
@@ -238,46 +265,55 @@ class ServiceFiles
      */
     private function importClients(array $clients, $database)
     {
-            unset($clients[0][0]); //Remove headers (bio, phone)
-            $webSettings = Setting::select('preinstall_text')->where('id', 1)->first();
-            foreach ($clients as $circle => $circle_clients) {
-                if (count($circle_clients) < 2) {
-                    break;
-                }
-                $processedClients = [];
-                foreach ($circle_clients as $client) {
-                    $bio = explode(' ', $client[0]);
-                    $processedClients[] = [
-                        'first_name' => $bio[1],
-                        'last_name' => $bio[0],
-                        'surname' => $bio[2],
-                        'fullname' => $client[0],
-                        'phone' => str_replace(" ", "", $client[1]),
-                        'database' => $database,
-                        'information' => $webSettings->preinstall_text
-                    ];
-                }
-                Client::insert($processedClients);
-            }
-            $freeManagers = User::where('current_client', '=', NULL)->get();
-            foreach ($freeManagers as $manager) {
-                $freeClient = Client::where('processed', 0)
-                    ->where('database', $database)->inRandomOrder();
-                $clientData = $freeClient->first();
-                if (!$clientData) {
-                    break;
-                }
-                User::where('id', $manager->id)
-                    ->update(['current_client' => $clientData->id]);
-                Client::where('id', $clientData->id)
-                    ->update(['processed' => 1]);
-                ProcessedClient::create([
-                    'client_id' => $clientData->id,
-                    'manager_id' => $manager->id
-                ]);
-            }
 
-            return FALSE;
+        $webSettings = Setting::select('preinstall_text')->where('id', 1)->first();
+
+        foreach ($clients as $client) {
+            $client->database = $database;
+            $client->information = isset($client->information) ? $client->information : $webSettings->preinstall_text;
+        }
+
+        Client::insert($clients);
+
+        // foreach ($clients as $circle => $circle_clients) {
+        //     if (count($circle_clients) < 2) {
+        //         break;
+        //     }
+        //     $processedClients = [];
+        //     foreach ($circle_clients as $client) {
+        //         $bio = explode(' ', $client[0]);
+        //         $processedClients[] = [
+        //             'first_name' => $bio[1],
+        //             'last_name' => $bio[0],
+        //             'surname' => $bio[2],
+        //             'fullname' => $client[0],
+        //             'phone' => str_replace(" ", "", $client[1]),
+        //             'database' => $database,
+        //             'information' => $webSettings->preinstall_text
+        //         ];
+        //     }
+        //     Client::insert($processedClients);
+        // }
+
+        $freeManagers = User::where('current_client', '=', NULL)->get();
+        foreach ($freeManagers as $manager) {
+            $freeClient = Client::where('processed', 0)
+                ->where('database', $database)->inRandomOrder();
+            $clientData = $freeClient->first();
+            if (!$clientData) {
+                break;
+            }
+            User::where('id', $manager->id)
+                ->update(['current_client' => $clientData->id]);
+            Client::where('id', $clientData->id)
+                ->update(['processed' => 1]);
+            ProcessedClient::create([
+                'client_id' => $clientData->id,
+                'manager_id' => $manager->id
+            ]);
+        }
+
+        return FALSE;
     }
 
 

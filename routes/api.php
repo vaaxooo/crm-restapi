@@ -45,6 +45,8 @@ Route::group(['middleware' => ['api']], function ($route) {
         Route::delete('{id}/delete', '\App\Http\Controllers\FileController@deleteDatabase');
         Route::get('all', '\App\Http\Controllers\FileController@all');
         Route::get('{id}/get', '\App\Http\Controllers\FileController@show');
+
+        Route::post('{id}/get-clients-by-statuses', '\App\Http\Controllers\ClientController@getClientsByStatuses');
     });
 
     Route::group(['prefix' => 'clients'], function () {

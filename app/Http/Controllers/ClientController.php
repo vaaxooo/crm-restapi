@@ -120,4 +120,10 @@ class ClientController extends Controller
     {
         return $this->client->activeClients();
     }
+
+
+    public function getClientsByStatuses(Request $request, $id)
+    {
+        return $this->client->getClientsByStatuses($request, $id);
+    }
 }

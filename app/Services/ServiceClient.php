@@ -323,4 +323,21 @@ class ServiceClient
             'data' => $clientsList,
         ]);
     }
+
+
+    public function getClientsByStatuses($request, $id)
+    {
+
+        if (!isset($request->statuses)) {
+            return response()->json([
+                'status' => FALSE,
+                'message' => 'The [statuses] field required'
+            ]);
+        }
+        $clients = Client::whereIn('status', json_decode($request->statuses))->where('database', $id)->paginate(20);
+        return response()->json([
+            'status' => TRUE,
+            'data' => $clients
+        ]);
+    }
 }
