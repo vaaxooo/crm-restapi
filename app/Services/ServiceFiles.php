@@ -115,7 +115,6 @@ class ServiceFiles
         //     ->groupBy('files.id')->count('processed_clients.id');
 
         $total_count = DB::table('clients')->where('database', $id)->count();
-        $remainder = 0;
         $called_clients = 0;
         foreach ($statistics as $stats) {
             unset($stats->id);
@@ -124,14 +123,13 @@ class ServiceFiles
                 $called_clients += $stats->count;
                 continue;
             }
-            $remainder = $total_count - $called_clients;
         }
 
         $stats = [
             'statuses' => $statistics,
             'total_statistic' => [
                 'total_count' => $total_count,
-                'remainder' => $remainder,
+                'remainder' => $total_count - $called_clients,
                 'called_clients' => $called_clients
             ]
         ];
