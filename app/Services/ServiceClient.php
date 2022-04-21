@@ -204,24 +204,27 @@ class ServiceClient
         $status_name = (Status::select('id', 'name')->where('id', $request->status)->first())['name'];
         $client->update(['status' => $status_name]);
         $processedClient = ProcessedClient::where('client_id', $id);
-        $processedClient->update([
-            'status' => $status_name,
-            'processed' => 1,
-        ]);
-        $freeClient = Client::select('id')->where('processed', 0)
-            ->inRandomOrder()->first();
-        $current_client = NULL;
-        if ($freeClient) {
-            $current_client = $freeClient->id;
+        if ($processedClient->exists()) {
+            $processedClient->update([
+                'status' => $status_name,
+                'processed' => 1,
+            ]);
+            $freeClient = Client::select('id')->where('processed', 0)
+                ->inRandomOrder()->first();
+            $current_client = NULL;
+            if ($freeClient) {
+                $current_client = $freeClient->id;
+            }
+            $manager = $processedClient->first();
+            User::where('id', $manager->manager_id)
+                ->update(['current_client' => $current_client]);
+            Client::where('id', $freeClient->id)->update(['processed' => 1]);
+            ProcessedClient::create([
+                'client_id' => $current_client,
+                'manager_id' => $manager->manager_id,
+            ]);
         }
-        $manager = $processedClient->first();
-        User::where('id', $manager->manager_id)
-            ->update(['current_client' => $current_client]);
-        Client::where('id', $freeClient->id)->update(['processed' => 1]);
-        ProcessedClient::create([
-            'client_id' => $current_client,
-            'manager_id' => $manager->manager_id,
-        ]);
+
 
         return response()->json([
             'status' => TRUE,
