@@ -114,13 +114,12 @@ class ServiceFiles
         //     ->where('processed_clients.processed', 1)
         //     ->groupBy('files.id')->count('processed_clients.id');
 
-        $total_count = 0;
+        $total_count = DB::table('clients')->where('database', $id)->count();
         $remainder = 0;
         $called_clients = 0;
         foreach ($statistics as $stats) {
             unset($stats->id);
             unset($stats->name);
-            $total_count += $stats->count;
             if ($stats->status == "Не прозвонен") {
                 $remainder = $stats->count;
             } else {
