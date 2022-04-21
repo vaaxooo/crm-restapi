@@ -238,7 +238,8 @@ class ServiceFiles
     {
         $processedClients = [];
         $processedClients['titles'] = $clients[0][0];
-        $processedClients['clients'] = $clients[0][1];
+        unset($clients[0][0]);
+        $processedClients['clients'] = $clients[0];
         return $processedClients;
     }
 
