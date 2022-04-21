@@ -201,7 +201,7 @@ class ServiceClient
                 'message' => 'Client not found',
             ]);
         }
-        $status_name = (Status::select('id', 'name')->where('id', $id)->first())['name'];
+        $status_name = (Status::select('id', 'name')->where('id', $request->status)->first())['name'];
         $client->update(['status' => $status_name]);
         $processedClient = ProcessedClient::where('client_id', $id);
         $processedClient->update([
