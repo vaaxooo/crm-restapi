@@ -120,11 +120,11 @@ class ServiceFiles
         foreach ($statistics as $stats) {
             unset($stats->id);
             unset($stats->name);
-            if ($stats->status == "Не прозвонен") {
-                $remainder = $stats->count;
-            } else {
+            if ($stats->status != "Не прозвонен") {
                 $called_clients += $stats->count;
+                continue;
             }
+            $remainder = $total_count - $called_clients;
         }
 
         $stats = [
