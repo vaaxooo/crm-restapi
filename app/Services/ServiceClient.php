@@ -284,8 +284,8 @@ class ServiceClient
     {
         $activeClients = DB::table('processed_clients')
             ->select(
-                'clients.id',
-                'users.id',
+                'clients.id as client_id',
+                'users.id as manager_id',
                 'processed_clients.processed',
                 'processed_clients.client_id',
                 'processed_clients.manager_id',
@@ -294,7 +294,7 @@ class ServiceClient
                 'clients.surname as client_surname',
                 'clients.phone as client_phone',
                 'users.login as manager_login',
-                'files.id',
+                'files.id as database_id',
                 'files.name as database'
             )
             ->join('clients', 'clients.id', '=', 'processed_clients.client_id')
@@ -312,13 +312,16 @@ class ServiceClient
         foreach ($activeClients as $client) {
             $clientsList[] = [
                 'client' => [
+                    'id' => (int) $client->client_id,
                     'first_name' => $client->client_first_name,
                     'last_name' => $client->client_last_name,
                     'surname' => $client->client_surname,
                     'phone' => $client->client_phone
                 ],
                 'manager' => $client->manager_login,
-                'database' => $client->database
+                'manager_id' => (int) $client->manager_id,
+                'database' => $client->database,
+                'database_id' => (int) $client->database_id
             ];
         }
 
