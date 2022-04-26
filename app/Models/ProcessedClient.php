@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ProcessedClient extends Model
 {
     use HasFactory;
-    public $timestamps;
+    public $timestamps = true;
     /**
      * The attributes that are mass assignable.
      *

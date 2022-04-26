@@ -32,7 +32,8 @@ class CreateClientsTable extends Migration
             $table->string('information')->nullable();
             $table->boolean('processed')->default(false);
             $table->integer('database')->nullable();
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent();
 
             $table->index(['fullname', 'phone', 'database']);
         });

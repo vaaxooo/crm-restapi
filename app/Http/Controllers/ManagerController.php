@@ -93,6 +93,15 @@ class ManagerController extends Controller
     }
 
     /**
+     * @param  Request  $request
+     * @return JsonResponse
+     */
+    public function statisticForToday(Request $request): JsonResponse
+    {
+        return $this->manager->statisticsForToday($request);
+    }
+
+    /**
      * Returns all statistics for managers
      * @param  Request  $request
      * @return JsonResponse

@@ -75,6 +75,7 @@ Route::group(['middleware' => ['api']], function ($route) {
 
     Route::group(['prefix' => 'statistics'], function () {
         Route::get('managers', '\App\Http\Controllers\ManagerController@statistic');
+        Route::get('today', '\App\Http\Controllers\ManagerController@statisticForToday');
     });
 
     Route::group(['prefix' => 'tests'], function () {

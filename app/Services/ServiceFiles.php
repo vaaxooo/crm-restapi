@@ -310,7 +310,8 @@ class ServiceFiles
                 ->update(['processed' => 1]);
             ProcessedClient::create([
                 'client_id' => $clientData->id,
-                'manager_id' => $manager->id
+                'manager_id' => $manager->id,
+                'created_at' => date('Y-m-d H:i:s')
             ]);
         }
 

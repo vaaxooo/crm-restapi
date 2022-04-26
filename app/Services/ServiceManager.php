@@ -146,6 +146,23 @@ class ServiceManager
      * @param $request
      * @return JsonResponse
      */
+    public function statisticsForToday($request): JsonResponse
+    {
+        $statistics = DB::table('processed_clients')
+            ->select(DB::raw("count(*) as count, status, created_at as date"))
+            ->whereDate('created_at', date('Y-m-d'))
+            ->groupBy('status')
+            ->get();
+        return response()->json([
+            'status' => TRUE,
+            'data' => $statistics
+        ]);
+    }
+
+    /**
+     * @param $request
+     * @return JsonResponse
+     */
     public function statistic($request): JsonResponse
     {
         if(Redis::get('statistics')) {

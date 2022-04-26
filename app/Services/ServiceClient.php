@@ -307,6 +307,14 @@ class ServiceClient
             ->join('files', 'files.id', '=', 'clients.database')
             ->where('processed_clients.processed', 0)->get();
 
+
+        $clients = DB::table('processed_clients')
+
+
+            ->where('processed_clients.processed', 0)
+            ->get();
+        return response()->json($clients);
+
         $clientsList = [];
         foreach ($activeClients as $client) {
             $clientsList[] = [

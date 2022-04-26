@@ -19,7 +19,8 @@ class CreateProcessedClientsTable extends Migration
             $table->string('manager_id');
             $table->boolean('processed')->default(false);
             $table->string('status')->default('Не прозвонен');
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent();
         });
     }
 
