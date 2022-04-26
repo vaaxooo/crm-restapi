@@ -252,12 +252,12 @@ class ServiceFiles
     private function importClients(array $clients, $database, $fields)
     {
         unset($clients[0][0]); //Remove headers (bio, phone)
-        $webSettings = Setting::select('preinstall_text')->where('id', 1)->first();
+        $webSettings = Setting::select('preinstall_text', 'id')->where('id', 1)->first();
 
-        // foreach ($clients as $client) {
-        //     $client->database = $database;
-        //     $client->information = isset($client->information) ? $client->information : $webSettings->preinstall_text;
-        // }
+//         foreach ($clients as $client) {
+//             $client->database = $database;
+//             $client->information = isset($client->information) ? $client->information : $webSettings->preinstall_text;
+//         }
 
         foreach ($clients as $circle => $circle_clients) {
             if (count($circle_clients) < 2) {
@@ -275,11 +275,6 @@ class ServiceFiles
                         continue;
                     }
 
-                    if ($field->name === "information" && !$field->status) {
-                        $params['information'] = $webSettings->preinstall_text;
-                        continue;
-                    }
-
                     if ($field->name === "fullname") {
                         $bio = explode(' ', $client[$field_index]);
                         $params['first_name'] = $bio[1];
@@ -291,6 +286,8 @@ class ServiceFiles
                 }
 
                 $params['database'] = $database;
+                $params['information'] = $params['information'] ??
+                    $webSettings->preinstall_text;
                 $processedClients[] = $params;
             }
             Client::insert($processedClients);
