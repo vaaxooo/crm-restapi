@@ -126,4 +126,30 @@ class ClientController extends Controller
     {
         return $this->client->getClientsByStatuses($request, $id);
     }
+
+
+    public function createCallback(Request $request, $id)
+    {
+        return $this->client->createCallback($request, $id);
+    }
+
+    public function updateCallback(Request $request, $id)
+    {
+        return $this->client->updateCallback($request, $id);
+    }
+
+    public function deleteCallback(Request $request)
+    {
+        return $this->client->deleteCallback($request);
+    }
+
+    public function callbacks()
+    {
+        return $this->client->callbacks();
+    }
+
+    public function callbackById($id)
+    {
+        return $this->client->callbackById($id);
+    }
 }

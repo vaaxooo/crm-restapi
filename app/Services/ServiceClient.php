@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Callsback;
 use App\Models\Client;
 use App\Models\File;
 use App\Models\ProcessedClient;
@@ -345,6 +346,87 @@ class ServiceClient
         return response()->json([
             'status' => TRUE,
             'data' => $clients
+        ]);
+    }
+
+
+
+    public function createCallback($request, $id)
+    {
+        if (!isset($request->date)) {
+            return response()->json([
+                'status' => FALSE,
+                'message' => 'The [date] field required'
+            ]);
+        }
+        $manager_id = auth()->user()->id;
+        Callsback::create([
+            'user_id' => $id,
+            'manager_id' => $manager_id,
+            'date' => $request->date
+        ]);
+        return response()->json([
+            'status' => TRUE,
+            'message' => 'Call back successfully created'
+        ]);
+    }
+
+    public function updateCallback($request, $id)
+    {
+        if (!isset($request->date)) {
+            return response()->json([
+                'status' => FALSE,
+                'message' => 'The [date] field required'
+            ]);
+        }
+        Callsback::where('id', $id)->update([
+            'date' => $request->date
+        ]);
+        return response()->json([
+            'status' => TRUE,
+            'message' => 'Call back successfully updated'
+        ]);
+    }
+
+
+    public function deleteCallback($request)
+    {
+        if (!isset($request->date)) {
+            return response()->json([
+                'status' => FALSE,
+                'message' => 'The [date] field required'
+            ]);
+        }
+        Callsback::whereDate('date', '<=', $request->date)->delete();
+        return response()->json([
+            'status' => TRUE,
+            'message' => 'Calls back successfully deleted'
+        ]);
+    }
+
+    public function callbacks()
+    {
+        $data = DB::table('callsbacks')
+            ->select('clients.id as client_id', 'callsbacks.client_id as client_id', 'clients.fullname as client', 'users.id as manager_id', 'callsbacks.manager_id as manager_id', 'users.login as manager')
+            ->join('clients', 'clients.id', '=', 'callsbacks.client_id')
+            ->join('users', 'users.id', '=', 'callsbacks.manager_id')
+            ->get();
+        return response()->json([
+            'status' => TRUE,
+            'data' => $data
+        ]);
+    }
+
+    public function callbackById($id)
+    {
+        $data = DB::table('callsbacks')
+            ->select('clients.id as client_id', 'callsbacks.client_id as client_id', 'clients.fullname as client', 'users.id as manager_id', 'callsbacks.manager_id as manager_id', 'users.login as manager')
+            ->join('clients', 'clients.id', '=', 'callsbacks.client_id')
+            ->join('users', 'users.id', '=', 'callsbacks.manager_id')
+            ->where('client_id', $id)->get();
+        return response()->json([
+            'status' => TRUE,
+            'data' => $data
         ]);
     }
 }

@@ -15,7 +15,7 @@ class ManagerController extends Controller
     public function __construct()
     {
         $this->middleware('auth:api');
-        $this->middleware('permissions', ['except' => ['allManagers', 'getPassedTests', 'getPassedTest', 'passignTest', 'getCurrentClient']]);
+        $this->middleware('permissions', ['except' => ['callbacks', 'allManagers', 'getPassedTests', 'getPassedTest', 'passignTest', 'getCurrentClient']]);
         $this->manager = new ServiceManager();
     }
 
@@ -153,5 +153,11 @@ class ManagerController extends Controller
     public function passingTest(Request $request, $id, $test_id): JsonResponse
     {
         return $this->manager->passingTest($request, $id, $test_id);
+    }
+
+
+    public function callbacks($id): JsonResponse
+    {
+        return $this->manager->callbacks($id);
     }
 }

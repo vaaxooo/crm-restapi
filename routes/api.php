@@ -37,6 +37,9 @@ Route::group(['middleware' => ['api']], function ($route) {
         Route::get('{id}/passed-tests', '\App\Http\Controllers\ManagerController@getPassedTests');
         Route::get('{id}/passed-test/{test_id}', '\App\Http\Controllers\ManagerController@getPassedTest');
         Route::post('{id}/passing-test/{test_id}', '\App\Http\Controllers\ManagerController@passingTest');
+
+
+        Route::get('{id}/callbacks', '\App\Http\Controllers\ManagerController@callbacks');
     });
 
     Route::group(['prefix' => 'databases'], function () {
@@ -60,6 +63,13 @@ Route::group(['middleware' => ['api']], function ($route) {
         Route::patch('{id}/set-status', '\App\Http\Controllers\ClientController@setStatus');
         Route::patch('{id}/transfer', '\App\Http\Controllers\ClientController@transferClient');
         Route::get('active', '\App\Http\Controllers\ClientController@activeClients');
+
+
+        Route::post('{id}/callbacks/create', '\App\Http\Controllers\ClientController@createCallback');
+        Route::patch('callbacks/{id}/update', '\App\Http\Controllers\ClientController@updateCallback');
+        Route::delete('callbacks/delete', '\App\Http\Controllers\ClientController@deleteCallback');
+        Route::get('callbacks', '\App\Http\Controllers\ClientController@callbacks');
+        Route::get('{id}/callbacks', '\App\Http\Controllers\ClientController@callbackById');
     });
 
     Route::group(['prefix' => 'statuses'], function () {
