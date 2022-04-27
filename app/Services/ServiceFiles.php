@@ -254,10 +254,10 @@ class ServiceFiles
         unset($clients[0][0]); //Remove headers (bio, phone)
         $webSettings = Setting::select('preinstall_text', 'id')->where('id', 1)->first();
 
-//         foreach ($clients as $client) {
-//             $client->database = $database;
-//             $client->information = isset($client->information) ? $client->information : $webSettings->preinstall_text;
-//         }
+        //         foreach ($clients as $client) {
+        //             $client->database = $database;
+        //             $client->information = isset($client->information) ? $client->information : $webSettings->preinstall_text;
+        //         }
 
         foreach ($clients as $circle => $circle_clients) {
             if (count($circle_clients) < 2) {
@@ -366,5 +366,16 @@ class ServiceFiles
             'status' => TRUE,
             'message' => 'Database successfully deleted',
         ]);
+    }
+
+
+    public function action($request)
+    {
+        if (!isset($action)) {
+            return response()->json([
+                'status' => FALSE,
+                'message' => 'The [action] field required'
+            ]);
+        }
     }
 }

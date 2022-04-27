@@ -50,6 +50,8 @@ Route::group(['middleware' => ['api']], function ($route) {
         Route::get('{id}/get', '\App\Http\Controllers\FileController@show');
 
         Route::post('{id}/get-clients-by-statuses', '\App\Http\Controllers\ClientController@getClientsByStatuses');
+
+        Route::get('action', '\App\Http\Controllers\FileController@action');
     });
 
     Route::group(['prefix' => 'clients'], function () {

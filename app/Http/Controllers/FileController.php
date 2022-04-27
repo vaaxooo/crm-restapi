@@ -67,4 +67,8 @@ class FileController extends Controller
         return $this->file->delete($id);
     }
 
+    public function action(Request $request)
+    {
+        return $this->file->action($request);
+    }
 }
