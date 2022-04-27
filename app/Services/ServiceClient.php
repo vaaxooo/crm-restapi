@@ -360,11 +360,16 @@ class ServiceClient
             ]);
         }
         $manager_id = auth()->user()->id;
-        Callsback::create([
-            'client_id' => $id,
+        $client_id = (int) $id;
+        $params = [
+            'client_id' => $client_id,
             'manager_id' => $manager_id,
             'date' => $request->date
-        ]);
+        ];
+
+        return response()->json($params);
+
+        Callsback::create($params);
         return response()->json([
             'status' => TRUE,
             'message' => 'Call back successfully created'

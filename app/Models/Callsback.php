@@ -11,7 +11,7 @@ class Callsback extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'user_id',
+        'client_id',
         'manager_id',
         'date'
     ];
