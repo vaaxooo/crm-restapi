@@ -361,7 +361,7 @@ class ServiceClient
         }
         $manager_id = auth()->user()->id;
         Callsback::create([
-            'user_id' => $id,
+            'client_id' => $id,
             'manager_id' => $manager_id,
             'date' => $request->date
         ]);
