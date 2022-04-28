@@ -152,7 +152,8 @@ class ServiceManager
         $statistics = DB::table('processed_clients')
             ->select(DB::raw("count(*) as count, status, created_at as date"))
             ->where('processed', 1)
-            ->whereDate('created_at', date('Y-m-d'))
+            ->where('created_at', date('Y-m-d'))
+            ->whereNotIn('status', ['Не прозвонен'])
             ->groupBy('status')
             ->get();
         return response()->json([
@@ -167,14 +168,24 @@ class ServiceManager
      */
     public function statistic($request): JsonResponse
     {
-        if (Redis::get('statistics')) {
-            return response()->json([
-                'status' => TRUE,
-                'data' => json_decode(Redis::get('statistics')),
-            ]);
+        if (isset($request->start_date) && isset($request->end_date)) {
+            $start_date = (string) $request->start_date;
+            $end_date = (string) $request->end_date;
+            $managers = DB::select(
+                'WITH m AS (SELECT * FROM users WHERE role = "manager") SELECT m.id, pc.id, pc.manager_id, pc.status, pc.created_at FROM m, processed_clients as pc WHERE DATE(pc.created_at) BETWEEN ? AND ? AND NOT pc.status = ? GROUP BY pc.id',
+                [$start_date, $end_date, "Не прозвонен"]
+            );
+        } else {
+            if (Redis::get('statistics')) {
+                return response()->json([
+                    'status' => TRUE,
+                    'data' => json_decode(Redis::get('statistics')),
+                ]);
+            }
+            $managers = DB::select(DB::raw('WITH m AS (SELECT * FROM users WHERE role = "manager")
+SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc WHERE NOT pc.status = "Не прозвонен" GROUP BY pc.id'));
         }
-        $managers = DB::select(DB::raw('WITH m AS (SELECT * FROM users WHERE role = "manager")
-SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GROUP BY pc.id'));
+
         $processedManagers = [];
         foreach ($managers as $manager) {
             if (isset($processedManagers[$manager->manager_id][$manager->status])) {
