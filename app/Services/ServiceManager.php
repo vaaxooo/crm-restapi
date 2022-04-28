@@ -149,16 +149,44 @@ class ServiceManager
      */
     public function statisticsForToday($request): JsonResponse
     {
-        $statistics = DB::table('processed_clients')
-            ->select(DB::raw("count(*) as count, status, created_at as date"))
-            ->where('processed', 1)
-            ->where('created_at', date('Y-m-d'))
-            ->whereNotIn('status', ['Не прозвонен'])
-            ->groupBy('status')
+        $managers = DB::table('processed_clients')
+            ->select(DB::raw("count(*) as count, processed_clients.status, processed_clients.created_at as date, users.id as manager_id, users.first_name, users.last_name, users.surname, users.login, processed_clients.manager_id, clients.id as client_id, processed_clients.client_id, clients.fullname as client"))
+
+            ->join('users', 'users.id', '=', 'processed_clients.manager_id')
+            ->join('clients', 'clients.id', '=', 'processed_clients.client_id')
+
+            ->where('processed_clients.processed', 1)
+            ->where('processed_clients.created_at', date('Y-m-d'))
+            ->whereNotIn('processed_clients.status', ['Не прозвонен'])
+            ->groupBy('processed_clients.status')
             ->get();
+        $processedManagers = [];
+        foreach ($managers as $key => $manager) {
+            if (isset($processedManagers[$manager->manager_id]['statistics'][$manager->status])) {
+                $processedManagers[$manager->manager_id]['statistics'][$manager->status]
+                    = (int)$processedManagers[$manager->manager_id]['statistics'][$manager->status]
+                    + 1;
+            } else {
+                if (!isset($processedManagers[$manager->manager_id])) {
+                    $processedManagers[$manager->manager_id] = [
+                        'id' => $manager->manager_id,
+                        'fullname' => $manager->first_name . " " . $manager->last_name . " " . $manager->surname,
+                        'login' => $manager->login
+                    ];
+                    if (isset($manager->client) && isset($manager->client_id)) {
+                        $processedManagers[$manager->manager_id]['client'] = [
+                            'id' => $manager->client_id,
+                            'fullname' => $manager->client
+                        ];
+                    }
+                }
+                $processedManagers[$manager->manager_id]['statistics'][$manager->status] = 1;
+            }
+        }
+        sort($processedManagers);
         return response()->json([
             'status' => TRUE,
-            'data' => $statistics
+            'data' => $processedManagers
         ]);
     }
 
@@ -172,7 +200,7 @@ class ServiceManager
             $start_date = (string) $request->start_date;
             $end_date = (string) $request->end_date;
             $managers = DB::select(
-                'WITH m AS (SELECT * FROM users WHERE role = "manager") SELECT m.id, pc.id, pc.manager_id, pc.status, pc.created_at FROM m, processed_clients as pc WHERE DATE(pc.created_at) BETWEEN ? AND ? AND NOT pc.status = ? GROUP BY pc.id',
+                'WITH m AS (SELECT * FROM users WHERE role = "manager") SELECT m.id, m.login, m.first_name, m.last_name, m.surname, pc.id, pc.manager_id, pc.status, pc.created_at, c.id as client_id, c.fullname as client FROM m, processed_clients as pc, clients as c WHERE DATE(pc.created_at) BETWEEN ? AND ? AND NOT pc.status = ? AND m.id = pc.manager_id AND c.id = m.current_client GROUP BY pc.id',
                 [$start_date, $end_date, "Не прозвонен"]
             );
         } else {
@@ -182,32 +210,40 @@ class ServiceManager
                     'data' => json_decode(Redis::get('statistics')),
                 ]);
             }
-            $managers = DB::select(DB::raw('WITH m AS (SELECT * FROM users WHERE role = "manager")
-SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc WHERE NOT pc.status = "Не прозвонен" GROUP BY pc.id'));
+            $managers = DB::select(
+                'WITH m AS (SELECT * FROM users WHERE role = "manager") SELECT m.id, m.login, m.first_name, m.last_name, m.surname, pc.id, pc.manager_id, pc.status, pc.created_at, c.id as client_id, c.fullname as client FROM m, processed_clients as pc, clients as c WHERE m.id = pc.manager_id AND c.id = m.current_client AND NOT pc.status = ? GROUP BY pc.id',
+                ["Не прозвонен"]
+            );
         }
-
         $processedManagers = [];
-        foreach ($managers as $manager) {
-            if (isset($processedManagers[$manager->manager_id][$manager->status])) {
-                $processedManagers[$manager->manager_id][$manager->status]
-                    = (int)$processedManagers[$manager->manager_id][$manager->status]
+        foreach ($managers as $key => $manager) {
+            if (isset($processedManagers[$manager->manager_id]['statistics'][$manager->status])) {
+                $processedManagers[$manager->manager_id]['statistics'][$manager->status]
+                    = (int)$processedManagers[$manager->manager_id]['statistics'][$manager->status]
                     + 1;
             } else {
-                $processedManagers[$manager->manager_id][$manager->status] = 1;
+                if (!isset($processedManagers[$manager->manager_id])) {
+                    $processedManagers[$manager->manager_id] = [
+                        'id' => $manager->manager_id,
+                        'fullname' => $manager->first_name . " " . $manager->last_name . " " . $manager->surname,
+                        'login' => $manager->login
+                    ];
+
+                    if (isset($manager->client) && isset($manager->client_id)) {
+                        $processedManagers[$manager->manager_id]['client'] = [
+                            'id' => $manager->client_id,
+                            'fullname' => $manager->client
+                        ];
+                    }
+                }
+                $processedManagers[$manager->manager_id]['statistics'][$manager->status] = 1;
             }
         }
-        $managers = [];
-        foreach ($processedManagers as $key => $statistic) {
-            $managers[] = [
-                'manager_id' => $key,
-                'processed_clients' => $statistic,
-            ];
-        }
+        sort($processedManagers);
         Redis::set('statistics', json_encode($managers), 'EX', 24200);
-
         return response()->json([
             'status' => TRUE,
-            'data' => $managers,
+            'data' => $processedManagers,
         ]);
     }
 
