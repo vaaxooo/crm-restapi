@@ -302,7 +302,7 @@ SELECT m.id, pc.id, pc.manager_id, pc.status FROM m, processed_clients as pc GRO
     public function callbacks($id)
     {
         $data = DB::table('callsbacks')
-            ->select('clients.id as client_id', 'callsbacks.client_id as client_id', 'callsbacks.date', 'callsbacks.date as callback_id', 'clients.fullname as client', 'clients.information', 'users.id as manager_id', 'callsbacks.manager_id as manager_id', 'users.login as manager')
+            ->select('clients.id as client_id', 'callsbacks.client_id as client_id', 'clients.phone as client_phone', 'callsbacks.date', 'callsbacks.date as callback_id', 'clients.fullname as client', 'clients.information', 'users.id as manager_id', 'callsbacks.manager_id as manager_id', 'users.login as manager')
             ->join('clients', 'clients.id', '=', 'callsbacks.client_id')
             ->join('users', 'users.id', '=', 'callsbacks.manager_id')
             ->where('manager_id', $id)
