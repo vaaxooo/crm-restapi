@@ -69,7 +69,7 @@ Route::group(['middleware' => ['api']], function ($route) {
 
         Route::post('{id}/callbacks/create', '\App\Http\Controllers\ClientController@createCallback');
         Route::patch('callbacks/{id}/update', '\App\Http\Controllers\ClientController@updateCallback');
-        Route::delete('callbacks/delete', '\App\Http\Controllers\ClientController@deleteCallback');
+        Route::get('callbacks/delete', '\App\Http\Controllers\ClientController@deleteCallback');
         Route::get('callbacks', '\App\Http\Controllers\ClientController@callbacks');
         Route::get('{id}/callbacks', '\App\Http\Controllers\ClientController@callbackById');
     });
