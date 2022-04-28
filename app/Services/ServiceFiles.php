@@ -369,13 +369,119 @@ class ServiceFiles
     }
 
 
-    public function action($request)
+    public function action($request, $id)
     {
-        if (!isset($action)) {
+        if (!isset($request->action)) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'The [action] field required'
             ]);
+        }
+
+        switch ($request->action) {
+            case 'work_with_new_clients':
+                $clients = Client::where('database', $id)
+                    ->where('status', 'Не прозвонен')
+                    ->paginate(20);
+                foreach ($clients as $client) {
+                    $manager = DB::table('processed_clients')->select(DB::raw('processed_clients.client_id as id, processed_clients.manager_id as manager_id, users.id as manager_id, users.login as login'))
+                        ->join('users', 'users.id', '=', 'processed_clients.manager_id')
+                        ->where('processed_clients.client_id', $client->id)->orderBy('id', 'desc')->first();
+                    if ($manager) {
+                        $client->manager = [
+                            'id' => $manager->manager_id,
+                            'login' => $manager->login
+                        ];
+                    }
+                }
+                return response()->json([
+                    'status' => TRUE,
+                    'data' => $clients,
+                ]);
+                break;
+            case 'work_with_failure_calls':
+                $clients = Client::where('database', $id)
+                    ->where('status', 'Недозвон')
+                    ->paginate(20);
+                foreach ($clients as $client) {
+                    $manager = DB::table('processed_clients')->select(DB::raw('processed_clients.client_id as id, processed_clients.manager_id as manager_id, users.id as manager_id, users.login as login'))
+                        ->join('users', 'users.id', '=', 'processed_clients.manager_id')
+                        ->where('processed_clients.client_id', $client->id)->orderBy('id', 'desc')->first();
+                    if ($manager) {
+                        $client->manager = [
+                            'id' => $manager->manager_id,
+                            'login' => $manager->login
+                        ];
+                    }
+                }
+                return response()->json([
+                    'status' => TRUE,
+                    'data' => $clients,
+                ]);
+                break;
+            case 'delete_by_status':
+                Client::where('status', 'Удалить')->where('database', $id)->update(['status' => 'Недозвон']);
+                $clients = Client::where('status', 'Недозвон')->where('database', $id)->get();
+                foreach ($clients as $client) {
+                    ProcessedClient::where('status', 'Удалить')->where('client_id', $client->id)->update(['status' => 'Недозвон']);
+                }
+                return response()->json([
+                    'status' => TRUE,
+                    'message' => 'Information updated',
+                ]);
+                break;
+            case 'clearing_database_history':
+                $clients = Client::where('status', 'Недозвон')->where('database', $id)->get();
+                foreach ($clients as $client) {
+                    ProcessedClient::where('client_id', $client->id)->update(['processed' => 0, 'status' => 'Не прозвонен']);
+                }
+                return response()->json([
+                    'status' => TRUE,
+                    'message' => 'Information updated',
+                ]);
+                break;
+            case 'refresh_geo_timestamp':
+
+                break;
+            case 'delete_duplicates':
+                $data = Client::select('id', 'database', 'phone')->where('database', $id)->groupBy('phone')
+                    ->havingRaw('count(phone) > 1')->get();
+                if (!$data) {
+                    return response()->json([
+                        'status' => FALSE,
+                        'message' => 'The list of duplicates is empty.',
+                    ]);
+                }
+                $clients = [];
+                foreach ($data as $key => $value) {
+                    $clients[] = $value['id'];
+                    $row = ProcessedClient::where('client_id', $value['id']);
+                    if ($row->exists()) {
+                        $processed_client = $row->first();
+                        $manager = $processed_client->manager_id;
+                        $row->delete();
+
+                        $freeClient = Client::select('id')->where('processed', 0)
+                            ->inRandomOrder()->first();
+                        $current_client = NULL;
+                        if ($freeClient) {
+                            $current_client = $freeClient->id;
+                        }
+                        User::where('id', $manager)->update(['current_client' => $current_client]);
+                        Client::where('id', $freeClient->id)
+                            ->update(['processed' => 1]);
+                        ProcessedClient::create([
+                            'client_id' => $current_client,
+                            'manager_id' => $manager,
+                        ]);
+                    }
+                }
+                Client::destroy($clients);
+                return response()->json([
+                    'status' => TRUE,
+                    'message' => 'All duplicates have been deleted',
+                ]);
+                break;
         }
     }
 }
