@@ -18,6 +18,7 @@ class CreateTestQuestionsTable extends Migration
             $table->string('test_id');
             $table->string('question');
             $table->string('answers');
+            $table->string('right_answers');
             $table->timestamps();
         });
     }
