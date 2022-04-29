@@ -67,8 +67,7 @@ class ServiceTest
             $params[] = [
                 'test_id' => $test->id,
                 'question' => $data->question,
-                'answers' => json_encode($data->answers),
-                'right_answers' => json_encode($data->answers),
+                'answers' => json_encode($data->answers)
             ];
         }
         TestQuestions::insert($params);
