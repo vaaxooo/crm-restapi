@@ -19,6 +19,7 @@ class CreateTestQuestionsTable extends Migration
             $table->string('question');
             $table->string('answers');
             $table->string('right_answers');
+            $table->boolean('wide_answer')->default(false);
             $table->timestamps();
         });
     }

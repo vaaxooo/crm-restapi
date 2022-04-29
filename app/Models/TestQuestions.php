@@ -16,6 +16,7 @@ class TestQuestions extends Model
         'test_id',
         'question',
         'answers',
-        'right_answers'
+        'right_answers',
+        'wide_answer'
     ];
 }

@@ -69,6 +69,7 @@ class ServiceTest
                 'question' => $data->question,
                 'answers' => json_encode($data->answers),
                 'right_answers' => json_encode($data->answers),
+                'wide_answer' => $data->wide_answer
             ];
         }
         TestQuestions::insert($params);
