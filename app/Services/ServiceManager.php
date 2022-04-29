@@ -240,7 +240,7 @@ class ServiceManager
             }
         }
         sort($processedManagers);
-        Redis::set('statistics', json_encode($managers), 'EX', 24200);
+        Redis::set('statistics', json_encode($processedManagers), 'EX', 24200);
         return response()->json([
             'status' => TRUE,
             'data' => $processedManagers,
