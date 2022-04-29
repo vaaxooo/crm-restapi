@@ -31,14 +31,18 @@ class ServiceTest
     {
         $test = DB::table('tests')
             ->join('test_questions', 'test_questions.test_id', '=', 'tests.id')
-            ->where('tests.id', $id)->first();
+            ->where('tests.id', $id);
         if (!$test->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Test not found',
             ]);
         }
-
+        $test = $test->first();
+        if ($test->wide_answer) {
+            unset($test->answers);
+        }
+        unset($test->right_answers);
         return response()->json([
             'status' => TRUE,
             'data' => $test,
