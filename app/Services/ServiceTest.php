@@ -30,7 +30,6 @@ class ServiceTest
     public function show($id): JsonResponse
     {
         $test = DB::table('tests')
-            ->join('test_questions', 'test_questions.test_id', '=', 'tests.id')
             ->where('tests.id', $id);
         if (!$test->exists()) {
             return response()->json([
@@ -39,14 +38,130 @@ class ServiceTest
             ]);
         }
         $test = $test->first();
-        if ($test->wide_answer) {
-            unset($test->answers);
+        $test->questions = DB::table('test_questions')->select('id',  'question', 'answers', 'wide_answer')->where('test_id', $id)->get();
+
+        foreach ($test->questions as $question) {
+            if ($question->wide_answer) {
+                unset($question->answers);
+            }
+            unset($question->right_answers);
         }
-        unset($test->right_answers);
+
         return response()->json([
             'status' => TRUE,
             'data' => $test,
         ]);
+    }
+
+    /** */
+    public function answers($id)
+    {
+        $data = DB::table('history_tests')
+            ->select('users.login as manager_login', 'history_tests.manager_id', 'history_tests.answers as manager_answers')
+            ->join('users', 'users.id', '=', 'history_tests.manager_id')
+            ->where('history_tests.test_id', $id)
+            ->get();
+
+
+        foreach ($data as $test) {
+            $test->manager_answers = json_decode($test->manager_answers);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
+        ]);
+    }
+
+    /** */
+    public function statistics($id)
+    {
+        $history_tests = DB::table('history_tests')
+            ->select('users.login', 'history_tests.answers', 'test_questions.right_answers')
+            ->join('users', 'users.id', '=', 'history_tests.manager_id')
+            ->join('test_questions', 'test_questions.test_id', '=', 'history_tests.test_id')
+            ->where('history_tests.test_id', $id)
+            ->groupBy('users.id')
+            ->get();
+
+        $total = DB::table('test_questions')->where('test_id', $id)->count();
+        $survey_count = DB::table('test_questions')->where('test_id', $id)->where('wide_answer', false)->count();
+        $wide_answers_count = DB::table('test_questions')->where('test_id', $id)->where('wide_answer', true)->count();
+
+
+        $data = [];
+        foreach ($history_tests as $user) {
+            $answers = json_decode($user->answers, true);
+            $right_answers = json_decode($user->right_answers, true);
+
+            $total_right_answers = count(array_intersect($answers, $right_answers));
+
+            $data[] = [
+                'login' => $user->login,
+                'statistics' => [
+                    'total' => $total,
+                    'survey_count' => $survey_count,
+                    'wide_answers_count' => $wide_answers_count,
+                    'total_right_answers' => $total_right_answers
+                ]
+            ];
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
+        ]);
+    }
+
+    /** */
+    public function update($request, $id)
+    {
+        if ($request->isMethod('get')) {
+            $test = DB::table('tests')->select('id', 'name')
+                ->where('tests.id', $id);
+            if (!$test->exists()) {
+                return response()->json([
+                    'status' => FALSE,
+                    'message' => 'Test not found',
+                ]);
+            }
+            $test = $test->first();
+            $test->questions = DB::table('test_questions')->select('id',  'question', 'answers', 'right_answers', 'wide_answer')->where('test_id', $id)->get();
+
+            return response()->json([
+                'status' => TRUE,
+                'data' => $test,
+            ]);
+        }
+
+        if ($request->isMethod('patch')) {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required',
+                'questions' => 'required',
+            ]);
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => FALSE,
+                    'errors' => $validator->errors(),
+                ]);
+            }
+            Test::where('id', $id)->update(['name' => $request->name]);
+
+            foreach (json_decode($request->questions) as $data) {
+                $params = [
+                    'question' => $data->question,
+                    'answers' => $data->answers,
+                    'right_answers' => $data->right_answers,
+                    'wide_answer' => $data->wide_answer
+                ];
+                DB::table('test_questions')->where('id', $data->id)->update($params);
+            }
+
+            return response()->json([
+                'status' => TRUE,
+                'message' => 'The test was successfully updated',
+            ]);
+        }
     }
 
     /**
@@ -71,8 +186,8 @@ class ServiceTest
             $params[] = [
                 'test_id' => $test->id,
                 'question' => $data->question,
-                'answers' => json_encode($data->answers),
-                'right_answers' => json_encode($data->answers),
+                'answers' => $data->answers,
+                'right_answers' => $data->answers,
                 'wide_answer' => $data->wide_answer
             ];
         }

@@ -10,7 +10,8 @@ class TestController extends Controller
 {
     public $test;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->middleware('auth:api');
         $this->middleware('permissions');
         $this->test = new ServiceTest();
@@ -34,12 +35,39 @@ class TestController extends Controller
     }
 
     /**
+     * @param $id
+     * @return JsonResponse
+     */
+    public function answers($id): JsonResponse
+    {
+        return $this->test->answers($id);
+    }
+
+    /**
+     * @param $id
+     * @return JsonResponse
+     */
+    public function statistics($id): JsonResponse
+    {
+        return $this->test->statistics($id);
+    }
+
+    /**
      * @param  Request  $request
      * @return JsonResponse
      */
     public function create(Request $request): JsonResponse
     {
         return $this->test->create($request);
+    }
+
+    /**
+     * @param  Request  $request
+     * @return JsonResponse
+     */
+    public function update(Request $request, $id): JsonResponse
+    {
+        return $this->test->update($request, $id);
     }
 
     /**

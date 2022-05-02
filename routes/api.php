@@ -95,6 +95,13 @@ Route::group(['middleware' => ['api']], function ($route) {
         Route::get('{id}/get', '\App\Http\Controllers\TestController@show');
         Route::post('create', '\App\Http\Controllers\TestController@create');
         Route::delete('{id}/delete', '\App\Http\Controllers\TestController@delete');
+
+        Route::get('{id}/update', '\App\Http\Controllers\TestController@update');
+        Route::patch('{id}/update', '\App\Http\Controllers\TestController@update');
+
+        Route::get('{id}/answers', '\App\Http\Controllers\TestController@answers');
+
+        Route::get('{id}/statistics', '\App\Http\Controllers\TestController@statistics');
     });
 
     Route::group(['prefix' => 'dialogue-templates'], function () {
