@@ -100,7 +100,6 @@ Route::group(['middleware' => ['api']], function ($route) {
         Route::patch('{id}/update', '\App\Http\Controllers\TestController@update');
 
         Route::get('{id}/answers', '\App\Http\Controllers\TestController@answers');
-
         Route::get('{id}/statistics', '\App\Http\Controllers\TestController@statistics');
     });
 

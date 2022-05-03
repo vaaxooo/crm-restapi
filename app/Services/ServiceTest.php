@@ -73,7 +73,13 @@ class ServiceTest
         ]);
     }
 
-    /** */
+
+    /**
+     * I get all the answers from the history_tests table, then I get the right answers from the
+     * test_questions table, then I compare them and get the number of correct answers.
+     * 
+     * @param id test id
+     */
     public function statistics($id)
     {
         $history_tests = DB::table('history_tests')
@@ -113,7 +119,14 @@ class ServiceTest
         ]);
     }
 
-    /** */
+
+    /**
+     * 
+     * @param request the request object
+     * @param id test id
+     * 
+     * @return The test with the questions.
+     */
     public function update($request, $id)
     {
         if ($request->isMethod('get')) {

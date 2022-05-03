@@ -15,7 +15,7 @@ class ServiceSettings
      */
     public function setPreinstallText($request): JsonResponse
     {
-        if(empty($request->preinstall_text)) {
+        if (empty($request->preinstall_text)) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'The [preinstall_text] field is mandatory',
@@ -37,7 +37,7 @@ class ServiceSettings
      */
     public function setJivoUrl($request): JsonResponse
     {
-        if(empty($request->jivo)) {
+        if (empty($request->jivo)) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'The [jivo] field is mandatory',
@@ -73,7 +73,7 @@ class ServiceSettings
     public function showDialogueTemplate($id): JsonResponse
     {
         $dialogueTemplate = DialogueTemplates::where('id', $id);
-        if($dialogueTemplate->exists()) {
+        if (!$dialogueTemplate->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Dialogue template not found',
@@ -92,7 +92,7 @@ class ServiceSettings
      */
     public function createDialogueTemplate($request): JsonResponse
     {
-        if(!isset($request->name)) {
+        if (!isset($request->name)) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'The [name] field is required',
@@ -116,7 +116,7 @@ class ServiceSettings
      */
     public function updateDialogueTemplate($request, $id): JsonResponse
     {
-        if(!isset($request->name)) {
+        if (!isset($request->name)) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'The [name] field is required',
@@ -140,7 +140,7 @@ class ServiceSettings
     public function deleteDialogueTemplate($id): JsonResponse
     {
         $dialogueTemplate = DialogueTemplates::where('id', $id);
-        if($dialogueTemplate->exists()) {
+        if ($dialogueTemplate->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Dialogue template not found',
