@@ -140,7 +140,7 @@ class ServiceSettings
     public function deleteDialogueTemplate($id): JsonResponse
     {
         $dialogueTemplate = DialogueTemplates::where('id', $id);
-        if ($dialogueTemplate->exists()) {
+        if (!$dialogueTemplate->exists()) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Dialogue template not found',
