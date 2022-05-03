@@ -139,7 +139,7 @@ class ServiceTest
                 ]);
             }
             $test = $test->first();
-            $test->questions = DB::table('test_questions')->select('id',  'question', 'answers', 'right_answers', 'wide_answer')->where('test_id', $id)->get();
+            $test->questions = DB::table('test_questions')->select('question', 'answers', 'right_answers', 'wide_answer')->where('test_id', $id)->get();
 
             return response()->json([
                 'status' => TRUE,
@@ -160,15 +160,18 @@ class ServiceTest
             }
             Test::where('id', $id)->update(['name' => $request->name]);
 
+            $params = [];
             foreach (json_decode($request->questions) as $data) {
-                $params = [
+                $params[] = [
+                    'test_id' => $id,
                     'question' => $data->question,
                     'answers' => $data->answers,
                     'right_answers' => $data->right_answers,
                     'wide_answer' => $data->wide_answer
                 ];
-                DB::table('test_questions')->where('id', $data->id)->update($params);
             }
+            DB::table('test_questions')->where('test_id', $id)->delete();
+            DB::table('test_questions')->insert($params);
 
             return response()->json([
                 'status' => TRUE,
