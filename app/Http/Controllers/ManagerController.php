@@ -15,7 +15,7 @@ class ManagerController extends Controller
     public function __construct()
     {
         $this->middleware('auth:api');
-        $this->middleware('permissions', ['except' => ['callbacks', 'allManagers', 'getPassedTests', 'getPassedTest', 'passignTest', 'getCurrentClient']]);
+        $this->middleware('permissions', ['except' => ['callbacks', 'allManagers', 'getPassedTests', 'getPassedTest', 'passingTest', 'getCurrentClient']]);
         $this->manager = new ServiceManager();
     }
 

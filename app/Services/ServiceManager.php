@@ -321,10 +321,10 @@ class ServiceManager
      */
     public function passingTest($request, $id, $test_id): JsonResponse
     {
-        if (!isset($request->validator)) {
+        if (!isset($request->answers)) {
             return response()->json([
                 'status' => FALSE,
-                'message' => 'The [answer] field is required',
+                'message' => 'The [answers] field is required',
             ]);
         }
         if (!Test::where('id', $test_id)->exists()) {
@@ -336,7 +336,7 @@ class ServiceManager
         HistoryTest::create([
             'test_id' => $test_id,
             'manager_id' => $id,
-            'answer' => $request->answer,
+            'answer' => $request->answers,
         ]);
 
         return response()->json([
