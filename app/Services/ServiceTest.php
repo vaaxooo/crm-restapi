@@ -198,12 +198,16 @@ class ServiceTest
         }
         $test = Test::create(['name' => $request->name]);
         $params = [];
+
+
+        // return response()->json(json_decode($request->questions, true)[0]);
         foreach (json_decode($request->questions) as $data) {
+
             $params[] = [
                 'test_id' => $test->id,
                 'question' => $data->question,
-                'answers' => $data->answers,
-                'right_answers' => $data->answers,
+                'answers' => json_encode($data->answers),
+                'right_answers' => json_encode($data->answers),
                 'wide_answer' => $data->wide_answer
             ];
         }
