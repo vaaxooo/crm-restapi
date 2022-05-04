@@ -17,9 +17,18 @@ class ServiceTest
      */
     public function all(): JsonResponse
     {
+        $data = Test::paginate(20);
+
+        foreach ($data as $row) {
+            $row->passed_the_test = false;
+            if (HistoryTest::where('test_id', $row->id)->where('manager_id', auth()->user()->id)->exists()) {
+                $row->passed_the_test = true;
+            }
+        }
+
         return response()->json([
             'status' => TRUE,
-            'data' => Test::paginate(20),
+            'data' => $data,
         ]);
     }
 
