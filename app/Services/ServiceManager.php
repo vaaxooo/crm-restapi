@@ -336,7 +336,7 @@ class ServiceManager
         HistoryTest::create([
             'test_id' => $test_id,
             'manager_id' => $id,
-            'answer' => $request->answers,
+            'answers' => $request->answers,
         ]);
 
         return response()->json([
