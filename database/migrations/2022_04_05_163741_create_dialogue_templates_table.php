@@ -15,6 +15,7 @@ class CreateDialogueTemplatesTable extends Migration
     {
         Schema::create('dialogue_templates', function (Blueprint $table) {
             $table->id();
+            $table->integer('manager_id')->nullable();
             $table->string('name');
             $table->binary('text');
             $table->timestamps();

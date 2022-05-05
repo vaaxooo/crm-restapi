@@ -15,7 +15,7 @@ class SettingController extends Controller
     public function __construct()
     {
         $this->middleware('auth:api');
-        $this->middleware('permissions');
+        $this->middleware('permissions', ['except' => ['dialogueTemplates', 'showDialogueTemplate', 'createDialogueTemplate', 'updateDialogueTemplate', 'deleteDialogueTemplate']]);
         $this->settings = new ServiceSettings();
     }
 

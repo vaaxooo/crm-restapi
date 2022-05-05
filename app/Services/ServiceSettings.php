@@ -58,7 +58,12 @@ class ServiceSettings
      */
     public function dialogueTemplates(): JsonResponse
     {
-        $dialogueTemplates = DialogueTemplates::paginate(15);
+
+        if (auth()->user()->role == "admin") {
+            $dialogueTemplates = DialogueTemplates::where('manager_id', auth()->user()->id)->paginate(15);
+        } else {
+            $dialogueTemplates = DialogueTemplates::whereIn('manager_id', [auth()->user()->id, 1])->paginate(15);
+        }
 
         return response()->json([
             'status' => TRUE,
@@ -80,9 +85,18 @@ class ServiceSettings
             ]);
         }
 
+        $data = $dialogueTemplate->first();
+
+        if ($data->manager_id != 1 || $data->manager_id != auth()->user()->id) {
+            return response()->json([
+                'status' => FALSE,
+                'message' => 'Dialogue template not found',
+            ]);
+        }
+
         return response()->json([
             'status' => TRUE,
-            'data' => $dialogueTemplate->first(),
+            'data' => $data,
         ]);
     }
 
@@ -99,6 +113,7 @@ class ServiceSettings
             ]);
         }
         DialogueTemplates::create([
+            'manager_id' => auth()->user()->id,
             'name' => $request->name,
             'text' => $request->text,
         ]);
@@ -122,11 +137,17 @@ class ServiceSettings
                 'message' => 'The [name] field is required',
             ]);
         }
-        DialogueTemplates::where('id', $id)->update([
+        $data = DialogueTemplates::where('id', $id)->where('manager_id', auth()->user()->id);
+        if (!$data->exists()) {
+            return response()->json([
+                'status' => FALSE,
+                'message' => 'Dialogue Template not found'
+            ]);
+        }
+        $data->update([
             'name' => $request->name,
             'text' => $request->text,
         ]);
-
         return response()->json([
             'status' => TRUE,
             'message' => 'Dialogue template have been successfully refreshed',
@@ -139,7 +160,7 @@ class ServiceSettings
      */
     public function deleteDialogueTemplate($id): JsonResponse
     {
-        $dialogueTemplate = DialogueTemplates::where('id', $id);
+        $dialogueTemplate = DialogueTemplates::where('id', $id)->where('manager_id', auth()->user()->id);
         if (!$dialogueTemplate->exists()) {
             return response()->json([
                 'status' => FALSE,
