@@ -13,6 +13,7 @@ class DialogueTemplates extends Model
      * @var string[]
      */
     protected $fillable = [
+        'manager_id',
         'name',
         'text'
     ];
