@@ -87,7 +87,7 @@ class ServiceSettings
 
         $data = $dialogueTemplate->first();
 
-        if ($data->manager_id != 1 || $data->manager_id != auth()->user()->id) {
+        if ($data->manager_id != 1 && $data->manager_id != auth()->user()->id) {
             return response()->json([
                 'status' => FALSE,
                 'message' => 'Dialogue template not found',
