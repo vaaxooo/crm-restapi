@@ -136,7 +136,7 @@ class ServiceFiles
 
         $database = DB::table('files')->where('id', $id)->get();
         $clients = Client::where('database', $id)
-            ->paginate(2);
+            ->paginate(20);
 
         foreach ($clients as $client) {
 
