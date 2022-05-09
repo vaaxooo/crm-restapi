@@ -211,11 +211,13 @@ class ServiceReporting
     /**
      * @return JsonResponse
      */
-    public function kurs()
+    public function exchange_rates()
     {
+        $rates = ["BTCUSD" => $this->kurs->BTCUSD, "USDUAH" => $this->kurs->USDUAH];
+
         return response()->json([
             'status' => TRUE,
-            'data' => $this->kurs
+            'data' => $rates
         ]);
     }
 
