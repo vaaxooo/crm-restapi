@@ -75,9 +75,9 @@ class ReportingController extends Controller
     /**
      * @return mixed
      */
-    public function kurs()
+    public function exchange_rates()
     {
-        return $this->reporting->kurs();
+        return $this->reporting->exchange_rates();
     }
 
     /**

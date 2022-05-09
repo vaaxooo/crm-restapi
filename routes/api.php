@@ -118,7 +118,7 @@ Route::group(['middleware' => ['api']], function ($route) {
         Route::post('expense', '\App\Http\Controllers\ReportingController@expense');
         Route::get('expense/history', '\App\Http\Controllers\ReportingController@expenseHistory');
         Route::delete('expense/{id}/delete', '\App\Http\Controllers\ReportingController@expenseDelete');
-        Route::get('kurs', '\App\Http\Controllers\ReportingController@kurs');
+        Route::get('exchange_rates', '\App\Http\Controllers\ReportingController@exchange_rates');
         Route::get('salaries', '\App\Http\Controllers\ReportingController@salaries');
 
         Route::post('payouts', '\App\Http\Controllers\ReportingController@payouts');

@@ -56,14 +56,15 @@ class ServiceReporting
         ]*/
         $processedData = [];
         $total_percent = 0;
+
         foreach (json_decode($params->payouts_list) as $payout) {
             $payout = (object) $payout;
-            foreach ($payout->managers as $manager_id => $manager) {
+            foreach ($payout->managers as $key => $manager) {
                 $processedData[] = [
                     'date' => $params->date,
                     'comment' => $payout->comment,
-                    'manager_bio' => $manager,
-                    'manager_id' => $manager_id,
+                    'manager_bio' => $manager->login,
+                    'manager_id' => $manager->id,
                     'total_amount' => $params->payout,
                     'percent' => $payout->percent
                 ];
@@ -79,7 +80,7 @@ class ServiceReporting
         foreach ($processedData as $key => $manager) {
             $manager = (object) $manager;
             $processedData[$key]['payout'] = $params->payout / count($processedData); //Выплата = кол-во менеджеров / общая сумма
-            $processedData[$key]['salary'] = $params->payout * $manager->temp_percent / 100; //Доход = Общая сумма / процент менеджера
+            $processedData[$key]['salary'] = $params->payout * $manager->percent / 100; //Доход = Общая сумма / процент менеджера
         }
         ReportingIncome::insert($processedData);
         $generalManager = User::select('first_name', 'last_name', 'surname', 'login', 'id')->where('role', 'admin')->first();
@@ -211,11 +212,13 @@ class ServiceReporting
     /**
      * @return JsonResponse
      */
-    public function kurs()
+    public function exchange_rates()
     {
+        $rates = ["BTCUSD" => $this->kurs->BTCUSD, "USDUAH" => $this->kurs->USDUAH];
+
         return response()->json([
             'status' => TRUE,
-            'data' => $this->kurs
+            'data' => $rates
         ]);
     }
 
