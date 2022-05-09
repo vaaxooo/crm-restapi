@@ -293,7 +293,7 @@ class ServiceFiles
             Client::insert($processedClients);
         }
 
-        $freeManagers = User::where('current_client', '=', NULL)->get();
+        $freeManagers = User::where('current_client', '=', NULL)->where('role', 'manager')->get();
         foreach ($freeManagers as $manager) {
             $freeClient = Client::where('processed', 0)
                 ->where('database', $database)->inRandomOrder();
