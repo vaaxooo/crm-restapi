@@ -66,7 +66,8 @@ class ServiceReporting
                     'manager_bio' => $manager->login,
                     'manager_id' => $manager->id,
                     'total_amount' => $params->payout,
-                    'percent' => $payout->percent
+                    'percent' => $payout->percent,
+                    'currency' => $params->currency
                 ];
                 $total_percent += $payout->percent;
             }
