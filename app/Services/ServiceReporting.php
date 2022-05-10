@@ -111,7 +111,7 @@ class ServiceReporting
     public function incomeHistory($request): JsonResponse
     {
         $table = DB::table('reporting_incomes')->select('id', 'percent', 'date', 'comment', 'manager_bio', 'total_amount', 'currency', 'salary', 'payout', 'created_at');
-        if (isset($request->dates)) {
+        if (isset($request->start_date) && isset($request->end_date)) {
             $table->whereDate('date', '>=', $request->start_date)
                 ->whereDate('date', '<=', $request->end_date);
         } else {
@@ -186,7 +186,7 @@ class ServiceReporting
     public function expenseHistory($request): JsonResponse
     {
         $table = DB::table('expenses');
-        if (isset($request->dates)) {
+        if (isset($request->start_date) && isset($request->end_date)) {
             $table->whereDate('date', '>=', $request->start_date)
                 ->whereDate('date', '<=', $request->end_date);
         } else {
@@ -230,7 +230,7 @@ class ServiceReporting
     public function salaries($request): JsonResponse
     {
         $table = DB::table('reporting_incomes')->select('manager_id', 'manager_bio', 'salary');
-        if (isset($request->dates)) {
+        if (isset($request->start_date) && isset($request->end_date)) {
             $table->whereDate('date', '>=', $request->start_date)
                 ->whereDate('date', '<=', $request->end_date);
         } else {
