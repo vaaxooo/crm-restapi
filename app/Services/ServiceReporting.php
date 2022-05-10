@@ -94,7 +94,8 @@ class ServiceReporting
             'percent' => 10,
             'salary' => $params->payout * 10 / 100,
             'created_at' => date('Y-m-d H:i:s'),
-            'role' => 'general_manager'
+            'role' => 'general_manager',
+            'currency' => $params->currency
         ]);
         return response()->json([
             'status' => TRUE,
