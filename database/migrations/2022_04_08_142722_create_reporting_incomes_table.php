@@ -22,6 +22,7 @@ class CreateReportingIncomesTable extends Migration
             $table->string('total_amount');
             $table->string('payout')->nullable();
             $table->string('salary');
+            $table->string('currency');
             $table->float('percent');
             $table->string('role')->default('manager');
             $table->timestamps();
