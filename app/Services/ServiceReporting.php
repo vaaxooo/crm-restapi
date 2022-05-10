@@ -98,8 +98,7 @@ class ServiceReporting
         ]);
         return response()->json([
             'status' => TRUE,
-            'message' => 'The report was successfully saved',
-            'data' => $processedData
+            'message' => 'The report was successfully saved'
         ]);
     }
 
@@ -109,7 +108,7 @@ class ServiceReporting
      */
     public function incomeHistory($request): JsonResponse
     {
-        $table = DB::table('reporting_incomes')->select('date', 'comment', 'manager_bio', 'currency', 'salary', 'payout', 'created_at');
+        $table = DB::table('reporting_incomes')->select('id', 'date', 'comment', 'manager_bio', 'currency', 'salary', 'payout', 'created_at');
         if (isset($request->dates)) {
             $table->whereDate('date', '>=', $request->start_date)
                 ->whereDate('date', '<=', $request->end_date);
