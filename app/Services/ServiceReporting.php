@@ -110,7 +110,7 @@ class ServiceReporting
      */
     public function incomeHistory($request): JsonResponse
     {
-        $table = DB::table('reporting_incomes')->select('id', 'percent', 'date', 'comment', 'manager_bio', 'currency', 'salary', 'payout', 'created_at');
+        $table = DB::table('reporting_incomes')->select('id', 'percent', 'date', 'comment', 'manager_bio', 'total_amount', 'currency', 'salary', 'payout', 'created_at');
         if (isset($request->dates)) {
             $table->whereDate('date', '>=', $request->start_date)
                 ->whereDate('date', '<=', $request->end_date);
